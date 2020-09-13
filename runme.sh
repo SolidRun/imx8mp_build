@@ -58,7 +58,8 @@ fi
 
 # Build buildroot
 cd $ROOTDIR/build/buildroot
-cp $ROOTDIR/configs/buildroot_defconfig .config
+cp $ROOTDIR/configs/buildroot_defconfig configs/imx8mp_hummingboard_pulse_defconfig
+make imx8mp_hummingboard_pulse_defconfig
 make
 
 export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
