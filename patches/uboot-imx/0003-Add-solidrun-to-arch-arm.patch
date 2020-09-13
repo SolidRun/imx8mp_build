@@ -1,0 +1,43 @@
+From 350bbae427f1e7ebf0385f0181bf6f6ba800acdb Mon Sep 17 00:00:00 2001
+From: TalPilo <tal.pilo@solid-run.com>
+Date: Sun, 13 Sep 2020 15:14:01 +0300
+Subject: [PATCH] Add solidrun to arch arm
+
+Signed-off-by: TalPilo <tal.pilo@solid-run.com>
+---
+ arch/arm/Kconfig                | 1 +
+ arch/arm/mach-imx/imx8m/Kconfig | 6 ++++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 377aaeebb7..94e08b23e8 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1822,6 +1822,7 @@ source "arch/arm/cpu/armv8/Kconfig"
+ 
+ source "arch/arm/mach-imx/Kconfig"
+ 
++source "board/solidrun/imx8mp_solidrun/Kconfig"
+ source "board/bosch/shc/Kconfig"
+ source "board/bosch/guardian/Kconfig"
+ source "board/CarMediaLab/flea3/Kconfig"
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index fb6dfe3355..db31605c17 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -24,6 +24,12 @@ config IMX8MP
+ 	bool
+ 	select IMX8M
+ 
++config TARGET_IMX8MP_SOLIDRUN
++	bool "SolidRun imx8mp based SOM"
++	select IMX8MP
++	select SUPPORT_SPL
++	select IMX8M_LPDDR4
++
+ config SYS_SOC
+ 	default "imx8m"
+ 
+-- 
+2.25.1
+
