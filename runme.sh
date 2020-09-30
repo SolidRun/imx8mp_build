@@ -80,7 +80,7 @@ set -e
 
 # Build linux
 cd $ROOTDIR/build/linux-imx
-make defconfig
+make imx_v8_defconfig
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/kernel.extra
 make -j32 Image dtbs
 

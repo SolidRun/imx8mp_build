@@ -1,13 +1,13 @@
-From 65e9e7e5a26d633ce282c00380f6e993d90f3854 Mon Sep 17 00:00:00 2001
+From d0bf3e2a0a97ee74dc67bf23705c6285ad9f7a65 Mon Sep 17 00:00:00 2001
 From: TalPilo <tal.pilo@solid-run.com>
-Date: Mon, 7 Sep 2020 13:46:03 +0300
+Date: Wed, 30 Sep 2020 18:04:23 +0300
 Subject: [PATCH] Add IMX8MP device tree
 
 Signed-off-by: TalPilo <tal.pilo@solid-run.com>
 ---
  arch/arm64/boot/dts/freescale/Makefile        |    2 +-
- .../freescale/imx8mp-hummingboard-pulse.dts   | 1110 +++++++++++++++++
- 2 files changed, 1111 insertions(+), 1 deletion(-)
+ .../freescale/imx8mp-hummingboard-pulse.dts   | 1113 +++++++++++++++++
+ 2 files changed, 1114 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
 
 diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
@@ -25,10 +25,10 @@ index d5eb439fe4a6..2306b485bd9c 100644
  			  imx8mp-evk-dsp.dtb imx8mp-evk-ov2775.dtb imx8mp-evk-basler.dtb
 diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
 new file mode 100644
-index 000000000000..f3f1e6b21266
+index 000000000000..079dc07e526e
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
-@@ -0,0 +1,1110 @@
+@@ -0,0 +1,1113 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright 2019 NXP
@@ -63,11 +63,11 @@ index 000000000000..f3f1e6b21266
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&pinctrl_gpio_led>;
 +
-+		status {
++		/*status {
 +			label = "status";
-+			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
-+			default-state = "on"; /* LED GREEN */
-+		};
++			gpios = <&gpio4 22 0>;
++			default-state = "on";
++		};*/
 +	};
 +	
 +	reg_can1_stby: regulator-can1-stby {
@@ -140,9 +140,10 @@ index 000000000000..f3f1e6b21266
 +	mpcie {
 +		pinctrl-names = "default";
 +                pinctrl-0 = <&pinctrl_mpcie>;
-+		gpio-0 = <&gpio1 1 GPIO_ACTIVE_LOW>;
-+		gpio-1 = <&gpio1 5 GPIO_ACTIVE_LOW>;
++		gpio-0 = <&gpio1 1 GPIO_ACTIVE_HIGH>;
++		gpio-1 = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 +		status = "okay";
++		enable-active-high;
 +	};
 +
 +	sound-hdmi {
@@ -194,12 +195,6 @@ index 000000000000..f3f1e6b21266
 +
 +&clk {
 +	init-on-array = <IMX8MP_CLK_HSIO_ROOT>;
-+};
-+
-+&pwm1 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pinctrl_pwm1>;
-+	status = "okay";
 +};
 +
 +&pwm4 {
@@ -293,6 +288,12 @@ index 000000000000..f3f1e6b21266
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&pinctrl_i2c1>;
 +	status = "okay";
++	
++	eeprom: eeprom@50{
++                compatible = "st,24c02", "atmel,24c02";
++                reg = <0x50>;
++                pagesize = <16>;
++        };
 +
 +	pmic: pca9450@25 {
 +		reg = <0x25>;
@@ -444,11 +445,12 @@ index 000000000000..f3f1e6b21266
 +
 +	adv_bridge: adv7535@39 {
 +                compatible = "adi,adv7533";
-+                reg = <0x39>;
++                reg = <0x3d>;
 +                adi,addr-cec = <0x3c>;
 +		adi,addr-edid = <0x3b>;
 +                adi,dsi-lanes = <4>;
-+                status = "okay";
++		gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
++                status = "okay";		
 +
 +                port {
 +                        adv7535_from_dsim: endpoint {
@@ -490,7 +492,7 @@ index 000000000000..f3f1e6b21266
 +};
 +
 +&ldb {
-+	status = "okay";
++	status = "disabled";
 +/*
 +	lvds-channel@0 {
 +		fsl,data-mapping = "jeida";
@@ -508,7 +510,11 @@ index 000000000000..f3f1e6b21266
 +};
 +
 +&ldb_phy {
-+	status = "okay";
++	status = "disabled";
++};
++
++&lcdif1 {
++        status = "okay";
 +};
 +
 +&mipi_dsi {
@@ -540,8 +546,9 @@ index 000000000000..f3f1e6b21266
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&pinctrl_pcie>;
 +	disable-gpio = <&gpio2 6 GPIO_ACTIVE_LOW>;
-+	reset-gpio = <&gpio2 7 GPIO_ACTIVE_LOW>;
++	reset-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
 +	ext_osc = <0>;
++	reset-gpio-active-high;
 +	/*clocks = <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
 +		 <&clk IMX8MP_CLK_PCIE_AUX>,
 +		 <&clk IMX8MP_CLK_PCIE_PHY>,
@@ -697,12 +704,6 @@ index 000000000000..f3f1e6b21266
 +		>;
 +	};
 +
-+	pinctrl_pwm1: pwm1grp {
-+		fsl,pins = <
-+			MX8MP_IOMUXC_GPIO1_IO01__PWM1_OUT	0x116
-+		>;
-+	};
-+
 +	pinctrl_pwm4: pwm4grp {
 +		fsl,pins = <
 +			MX8MP_IOMUXC_SAI5_RXFS__PWM4_OUT	0x116
@@ -796,7 +797,7 @@ index 000000000000..f3f1e6b21266
 +			MX8MP_IOMUXC_NAND_CE0_B__FLEXSPI_A_SS0_B	0x82
 +			MX8MP_IOMUXC_NAND_DATA00__FLEXSPI_A_DATA00	0x82
 +			MX8MP_IOMUXC_NAND_DATA01__FLEXSPI_A_DATA01	0x82
-+			MX8MP_IOMUXC_NAND_DATA02__FLEXSPI_A_DATA02	0x82
++			/*MX8MP_IOMUXC_NAND_DATA02__FLEXSPI_A_DATA02	0x82*/
 +			MX8MP_IOMUXC_NAND_DATA03__FLEXSPI_A_DATA03	0x82
 +		>;
 +	};
@@ -844,6 +845,8 @@ index 000000000000..f3f1e6b21266
 +			MX8MP_IOMUXC_SD1_DATA4__GPIO2_IO06		0x41
 +			MX8MP_IOMUXC_SD1_DATA5__GPIO2_IO07		0x41
 +			MX8MP_IOMUXC_GPIO1_IO10__GPIO1_IO10		0x19
++			MX8MP_IOMUXC_NAND_DATA02__GPIO3_IO08		0x19
++			MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00		0x19/*pcie reset*/
 +		>;
 +	};
 +
