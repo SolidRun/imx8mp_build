@@ -1,34 +1,34 @@
-From ea045b03717ed4cbe80ce99c92943b02d1d0832f Mon Sep 17 00:00:00 2001
+From 0adc2afe6d433f2c2d13f6433da7196ffdb50473 Mon Sep 17 00:00:00 2001
 From: TalPilo <tal.pilo@solid-run.com>
-Date: Sun, 4 Oct 2020 15:26:52 +0300
+Date: Sun, 1 Nov 2020 10:57:02 +0200
 Subject: [PATCH] Add IMX8MP device tree
 
 Signed-off-by: TalPilo <tal.pilo@solid-run.com>
 ---
  arch/arm64/boot/dts/freescale/Makefile        |    2 +-
- .../freescale/imx8mp-hummingboard-pulse.dts   | 1128 +++++++++++++++++
- 2 files changed, 1129 insertions(+), 1 deletion(-)
+ .../freescale/imx8mp-hummingboard-pulse.dts   | 1059 +++++++++++++++++
+ 2 files changed, 1060 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
 
 diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
-index d5eb439fe4a6..2306b485bd9c 100644
+index 7b27addc9603..986a3f5486e4 100644
 --- a/arch/arm64/boot/dts/freescale/Makefile
 +++ b/arch/arm64/boot/dts/freescale/Makefile
-@@ -61,7 +61,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mn-evk.dtb imx8mn-evk-rm67191.dtb imx8mn-ddr4-evk.
- 			  imx8mn-evk-ak5558.dtb imx8mn-evk-rpmsg.dtb
+@@ -63,7 +63,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mn-evk.dtb imx8mn-evk-rm67191.dtb imx8mn-ddr4-evk.
+ 			  imx8mn-evk-ak5558.dtb imx8mn-evk-rpmsg.dtb imx8mn-evk-8mic-revE.dtb
  dtb-$(CONFIG_ARCH_MXC) += imx8mn-ddr4-evk-root.dtb imx8mn-ddr4-evk-inmate.dtb imx8mn-evk-root.dtb imx8mn-evk-inmate.dtb
  dtb-$(CONFIG_ARCH_MXC) += imx8mn-ab2.dtb imx8mn-ddr4-ab2.dtb
 -dtb-$(CONFIG_ARCH_MXC) += imx8mp-evk.dtb imx8mp-evk-root.dtb imx8mp-evk-inmate.dtb imx8mp-evk-rpmsg.dtb \
 +dtb-$(CONFIG_ARCH_MXC) += imx8mp-hummingboard-pulse.dtb imx8mp-evk.dtb imx8mp-evk-root.dtb imx8mp-evk-inmate.dtb imx8mp-evk-rpmsg.dtb \
  			  imx8mp-evk-rm67191.dtb imx8mp-evk-flexcan2.dtb imx8mp-evk-it6263-lvds-dual-channel.dtb \
  			  imx8mp-evk-jdi-wuxga-lvds-panel.dtb imx8mp-ab2.dtb imx8mp-evk-sof-wm8960.dtb \
- 			  imx8mp-evk-dsp.dtb imx8mp-evk-ov2775.dtb imx8mp-evk-basler.dtb
+ 			  imx8mp-evk-dsp.dtb imx8mp-evk-ov2775.dtb imx8mp-evk-basler.dtb imx8mp-evk-pcie-ep.dtb \
 diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
 new file mode 100644
-index 000000000000..b53f72917f8d
+index 000000000000..7b132ba3d91d
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
-@@ -0,0 +1,1128 @@
+@@ -0,0 +1,1059 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright 2019 NXP
@@ -68,6 +68,14 @@ index 000000000000..b53f72917f8d
 +			gpios = <&gpio4 22 0>;
 +			default-state = "on";
 +		};*/
++	};
++
++	modem_reset: modem-reset {
++		compatible = "gpio-reset";
++		reset-gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
++		reset-delay-us = <2000>;
++		reset-post-delay-ms = <40>;
++		#reset-cells = <0>;
 +	};
 +	
 +	reg_can1_stby: regulator-can1-stby {
@@ -203,49 +211,11 @@ index 000000000000..b53f72917f8d
 +	status = "okay";
 +};
 +
-+&ecspi2 {
-+	#address-cells = <1>;
-+	#size-cells = <0>;
-+	fsl,spi-num-chipselects = <1>;
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pinctrl_ecspi2 &pinctrl_ecspi2_cs>;
-+	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
-+	status = "okay";
-+
-+	spidev1: spi@0 {
-+		reg = <0>;
-+		compatible = "rohm,dh2228fv";
-+		spi-max-frequency = <500000>;
-+	};
-+};
-+
-+/*eth0*/
-+/*&fec {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pinctrl_fec>;
-+	phy-mode = "rgmii-id";
-+	phy-handle = <&ethphy1>;
-+	fsl,magic-packet;
-+	status = "okay";
-+	reset-gpio = <&gpio4 19 GPIO_ACTIVE_LOW>;
-+
-+	mdio {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		ethphy1: ethernet-phy@0 {
-+			compatible = "ethernet-phy-ieee802.3-c22";
-+			reg = <0>;
-+			eee-broken-1000t;
-+		};
-+	};
-+};
-+*/
-+
 +&snvs_rtc{
 +	status = "disabled";
 +};
 +
++/*eth0*/
 +&eqos {
 +        pinctrl-names = "default";
 +        pinctrl-0 = <&pinctrl_eqos>;
@@ -409,18 +379,7 @@ index 000000000000..b53f72917f8d
 +	pinctrl-0 = <&pinctrl_i2c2>;
 +	status = "okay";
 +
-+	/*lvds_bridge: lvds-to-hdmi-bridge@4c {
-+		compatible = "ite,it6263";
-+		reg = <0x4c>;
-+		reset-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
-+
-+		port {
-+			it6263_in: endpoint {
-+				remote-endpoint = <&lvds_out>;
-+			};
-+		};
-+	};*/
-+
++	/*sound codec*/
 +	wm8904: wm8904@1a {
 +		compatible = "wlf,wm8904";
 +		clocks = <&clk IMX8MP_CLK_SAI3>;
@@ -501,20 +460,6 @@ index 000000000000..b53f72917f8d
 +
 +&ldb {
 +	status = "disabled";
-+/*
-+	lvds-channel@0 {
-+		fsl,data-mapping = "jeida";
-+		fsl,data-width = <24>;
-+		status = "okay";
-+
-+		port@1 {
-+			reg = <1>;
-+
-+			lvds_out: endpoint {
-+				remote-endpoint = <&it6263_in>;
-+			};
-+		};
-+	};*/
 +};
 +
 +&ldb_phy {
@@ -550,32 +495,28 @@ index 000000000000..b53f72917f8d
 +	status = "disabled";
 +};
 +
++
 +&pcie{
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pinctrl_pcie>;
-+	disable-gpio = <&gpio2 6 GPIO_ACTIVE_LOW>;
-+	reset-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
-+	ext_osc = <0>;
-+	reset-gpio-active-high;
-+	/*clocks = <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
-+		 <&clk IMX8MP_CLK_PCIE_AUX>,
-+		 <&clk IMX8MP_CLK_PCIE_PHY>,
-+		 <&clk IMX8MP_CLK_PCIE_ROOT>;
-+	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
-+	assigned-clocks = <&clk IMX8MP_CLK_HSIO_AXI_SRC>,
-+			  <&clk IMX8MP_CLK_PCIE_AUX>;
-+	assigned-clock-parents = <&clk IMX8MP_SYS_PLL2_500M>,
-+				 <&clk IMX8MP_SYS_PLL2_50M>;*/
-+	clocks = <&clk IMX8MP_CLK_PCIE_ROOT>,
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_pcie>;
++        disable-gpio = <&gpio1 5 GPIO_ACTIVE_LOW>;
++        reset-gpio = <&gpio5 13 GPIO_ACTIVE_LOW>;/*need to verify which igpio is final*/
++        ext_osc = <0>;
++        clocks = <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
 +                 <&clk IMX8MP_CLK_PCIE_AUX>,
-+		 <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
-+                 <&clk IMX8MP_CLK_PCIE_PHY>;
-+        clock-names = "pcie", "pcie_aux", "pcie_bus", "pcie_phy";
-+	reserved-region = <&rpmsg_reserved>;
-+	status = "okay";
++                 <&clk IMX8MP_CLK_PCIE_PHY>,
++                 <&clk IMX8MP_CLK_PCIE_ROOT>;
++        clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
++        assigned-clocks = <&clk IMX8MP_CLK_HSIO_AXI_SRC>,
++                          <&clk IMX8MP_CLK_PCIE_AUX>;
++        assigned-clock-parents = <&clk IMX8MP_SYS_PLL2_500M>,
++                                 <&clk IMX8MP_SYS_PLL2_50M>;
++        reserved-region = <&rpmsg_reserved>;
++        status = "okay";
 +};
 +
 +&pcie_phy{
++	ext_osc = <0>;
 +	status = "okay";
 +};
 +
@@ -604,6 +545,7 @@ index 000000000000..b53f72917f8d
 +	assigned-clocks = <&clk IMX8MP_CLK_UART1>;
 +	assigned-clock-parents = <&clk IMX8MP_SYS_PLL1_80M>;
 +	fsl,uart-has-rtscts;
++	resets = <&modem_reset>;
 +	status = "okay";
 +};
 +
@@ -704,31 +646,17 @@ index 000000000000..b53f72917f8d
 +	pinctrl-0 = <&pinctrl_hog>;
 +
 +	pinctrl_hog: hoggrp {
-+		fsl,pins = <
-+			MX8MP_IOMUXC_HDMI_DDC_SCL__HDMIMIX_EARC_SCL	0x400001c3
-+			MX8MP_IOMUXC_HDMI_DDC_SDA__HDMIMIX_EARC_SDA	0x400001c3
-+			MX8MP_IOMUXC_HDMI_HPD__HDMIMIX_EARC_DC_HPD	0x40000019
-+			MX8MP_IOMUXC_HDMI_CEC__HDMIMIX_EARC_CEC		0x40000019
-+		>;
-+	};
++                fsl,pins = <
++                        MX8MP_IOMUXC_HDMI_DDC_SCL__HDMIMIX_HDMI_SCL     0x400001c3
++                        MX8MP_IOMUXC_HDMI_DDC_SDA__HDMIMIX_HDMI_SDA     0x400001c3
++                        MX8MP_IOMUXC_HDMI_HPD__HDMIMIX_HDMI_HPD         0x40000019
++                        MX8MP_IOMUXC_HDMI_CEC__HDMIMIX_HDMI_CEC         0x40000019
++                >;
++        };
 +
 +	pinctrl_pwm4: pwm4grp {
 +		fsl,pins = <
 +			MX8MP_IOMUXC_SAI5_RXFS__PWM4_OUT	0x116
-+		>;
-+	};
-+
-+	pinctrl_ecspi2: ecspi2grp {
-+		fsl,pins = <
-+			MX8MP_IOMUXC_ECSPI2_SCLK__ECSPI2_SCLK		0x82
-+			MX8MP_IOMUXC_ECSPI2_MOSI__ECSPI2_MOSI		0x82
-+			MX8MP_IOMUXC_ECSPI2_MISO__ECSPI2_MISO		0x82
-+		>;
-+	};
-+
-+	pinctrl_ecspi2_cs: ecspi2cs {
-+		fsl,pins = <
-+			MX8MP_IOMUXC_ECSPI2_SS0__GPIO5_IO13		0x40000
 +		>;
 +	};
 +
@@ -856,12 +784,12 @@ index 000000000000..b53f72917f8d
 +
 +	pinctrl_pcie: pciegrp {
 +		fsl,pins = <
-+			MX8MP_IOMUXC_I2C4_SCL__HSIOMIX_PCIE_CLKREQ_B	0x61 /* open drain, pull up */
 +			MX8MP_IOMUXC_SD1_DATA4__GPIO2_IO06		0x41
 +			MX8MP_IOMUXC_SD1_DATA5__GPIO2_IO07		0x41
 +			MX8MP_IOMUXC_GPIO1_IO10__GPIO1_IO10		0x19
-+			MX8MP_IOMUXC_NAND_DATA02__GPIO3_IO08		0x19
-+			MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00		0x19/*pcie reset*/
++			MX8MP_IOMUXC_ECSPI2_SS0__GPIO5_IO13		0x41
++			MX8MP_IOMUXC_NAND_DATA02__GPIO3_IO08		0x41
++			MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00		0x41/*pcie reset*/
 +		>;
 +	};
 +
@@ -883,16 +811,16 @@ index 000000000000..b53f72917f8d
 +			MX8MP_IOMUXC_SAI1_MCLK__GPIO4_IO20	0x16
 +		>;
 +	};
-+
++	
 +	pinctrl_pdm: pdmgrp {
-+		fsl,pins = <
-+			MX8MP_IOMUXC_SAI5_RXC__AUDIOMIX_CLK		0xd6
-+			MX8MP_IOMUXC_SAI5_RXD0__AUDIOMIX_BIT_STREAM00	0xd6
-+			MX8MP_IOMUXC_SAI5_RXD1__AUDIOMIX_BIT_STREAM01	0xd6
-+			MX8MP_IOMUXC_SAI5_RXD2__AUDIOMIX_BIT_STREAM02	0xd6
-+			MX8MP_IOMUXC_SAI5_RXD3__AUDIOMIX_BIT_STREAM03	0xd6
-+		>;
-+	};
++                fsl,pins = <
++                        MX8MP_IOMUXC_SAI5_RXC__AUDIOMIX_PDM_CLK                 0xd6
++                        MX8MP_IOMUXC_SAI5_RXD0__AUDIOMIX_PDM_BIT_STREAM00       0xd6
++                        MX8MP_IOMUXC_SAI5_RXD1__AUDIOMIX_PDM_BIT_STREAM01       0xd6
++                        MX8MP_IOMUXC_SAI5_RXD2__AUDIOMIX_PDM_BIT_STREAM02       0xd6
++                        MX8MP_IOMUXC_SAI5_RXD3__AUDIOMIX_PDM_BIT_STREAM03       0xd6
++                >;
++        };
 +
 +	pinctrl_sai3: sai3grp {
 +		fsl,pins = <
@@ -1092,13 +1020,12 @@ index 000000000000..b53f72917f8d
 +			MX8MP_IOMUXC_SD1_STROBE__GPIO2_IO11	0x19
 +		>;
 +	};*/
-+
++	
 +	pinctrl_csi0_rst: csi0_rst_grp {
-+		fsl,pins = <
-+			MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06		0x19
-+			MX8MP_IOMUXC_GPIO1_IO15__CCMSRCGPCMIX_CLKO2	0x59
-+		>;
-+	};
++                fsl,pins = <
++                        MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06             0x19
++                >;
++        };
 +};
 +
 +&vpu_g1 {
@@ -1110,6 +1037,10 @@ index 000000000000..b53f72917f8d
 +};
 +
 +&vpu_vc8000e {
++	status = "okay";
++};
++
++&ocotp {
 +	status = "okay";
 +};
 +/*

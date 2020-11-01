@@ -2,7 +2,7 @@
 set -e
 
 ### General setup
-NXP_REL=rel_imx_5.4.24_2.1.0
+NXP_REL=rel_imx_5.4.47_2.2.0
 UBOOT_NXP_REL=imx_v2020.04_5.4.24_2.1.0
 #rel_imx_5.4.24_2.1.0
 #imx_v2020.04_5.4.24_2.1.0
@@ -100,11 +100,13 @@ mkdosfs tmp/part1.fat32
 echo "label linux" > $ROOTDIR/images/extlinux.conf
 echo "        linux ../Image" >> $ROOTDIR/images/extlinux.conf
 echo "        fdt ../imx8mp-hummingboard-pulse.dtb" >> $ROOTDIR/images/extlinux.conf
-echo "        append root=/dev/mmcblk1p2 rootwait" >> $ROOTDIR/images/extlinux.conf
+echo "        initrd ../rootfs.cpio.uboot" >> $ROOTDIR/images/extlinux.conf
+#echo "        append root=/dev/mmcblk1p2 rootwait" >> $ROOTDIR/images/extlinux.conf
 mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ::/
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
 dd if=/dev/zero of=microsd.img bs=1M count=301
 dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=microsd.img bs=1K seek=32 conv=notrunc
 parted --script microsd.img mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
