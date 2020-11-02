@@ -1,13 +1,13 @@
-From 0adc2afe6d433f2c2d13f6433da7196ffdb50473 Mon Sep 17 00:00:00 2001
+From 7eede0f9b6b550dd33b7e8ca57cc7d188396f5d8 Mon Sep 17 00:00:00 2001
 From: TalPilo <tal.pilo@solid-run.com>
-Date: Sun, 1 Nov 2020 10:57:02 +0200
+Date: Sun, 1 Nov 2020 17:23:50 +0200
 Subject: [PATCH] Add IMX8MP device tree
 
 Signed-off-by: TalPilo <tal.pilo@solid-run.com>
 ---
  arch/arm64/boot/dts/freescale/Makefile        |    2 +-
- .../freescale/imx8mp-hummingboard-pulse.dts   | 1059 +++++++++++++++++
- 2 files changed, 1060 insertions(+), 1 deletion(-)
+ .../freescale/imx8mp-hummingboard-pulse.dts   | 1070 +++++++++++++++++
+ 2 files changed, 1071 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
 
 diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
@@ -25,10 +25,10 @@ index 7b27addc9603..986a3f5486e4 100644
  			  imx8mp-evk-dsp.dtb imx8mp-evk-ov2775.dtb imx8mp-evk-basler.dtb imx8mp-evk-pcie-ep.dtb \
 diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
 new file mode 100644
-index 000000000000..7b132ba3d91d
+index 000000000000..b87206631653
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
-@@ -0,0 +1,1059 @@
+@@ -0,0 +1,1070 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright 2019 NXP
@@ -458,16 +458,26 @@ index 000000000000..7b132ba3d91d
 +	status = "okay";
 +};
 +
++/*micro HDMI*/
++&lcdif1 {
++        status = "okay";
++};
++
++&lcdif2 {
++	status = "disabled";
++};
++
++/*HDMI*/
++&lcdif3 {
++	status = "okay";
++};
++
 +&ldb {
 +	status = "disabled";
 +};
 +
 +&ldb_phy {
 +	status = "disabled";
-+};
-+
-+&lcdif1 {
-+        status = "okay";
 +};
 +
 +&mipi_dsi {
@@ -500,7 +510,7 @@ index 000000000000..7b132ba3d91d
 +        pinctrl-names = "default";
 +        pinctrl-0 = <&pinctrl_pcie>;
 +        disable-gpio = <&gpio1 5 GPIO_ACTIVE_LOW>;
-+        reset-gpio = <&gpio5 13 GPIO_ACTIVE_LOW>;/*need to verify which igpio is final*/
++        reset-gpio = <&gpio4 28 GPIO_ACTIVE_LOW>;/*need to verify which igpio is final*/
 +        ext_osc = <0>;
 +        clocks = <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
 +                 <&clk IMX8MP_CLK_PCIE_AUX>,
@@ -789,7 +799,8 @@ index 000000000000..7b132ba3d91d
 +			MX8MP_IOMUXC_GPIO1_IO10__GPIO1_IO10		0x19
 +			MX8MP_IOMUXC_ECSPI2_SS0__GPIO5_IO13		0x41
 +			MX8MP_IOMUXC_NAND_DATA02__GPIO3_IO08		0x41
-+			MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00		0x41/*pcie reset*/
++			MX8MP_IOMUXC_SAI3_RXFS__GPIO4_IO28		0x41/*pcie reset*/
++			//MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00		0x41/*pcie reset*/
 +		>;
 +	};
 +
