@@ -3,7 +3,7 @@ set -e
 
 ### General setup
 NXP_REL=rel_imx_5.4.47_2.2.0
-UBOOT_NXP_REL=imx_v2020.04_5.4.24_2.1.0
+UBOOT_NXP_REL=imx_v2020.04_5.4.47_2.2.0
 #rel_imx_5.4.24_2.1.0
 #imx_v2020.04_5.4.24_2.1.0
 BUILDROOT_VERSION=2020.02
