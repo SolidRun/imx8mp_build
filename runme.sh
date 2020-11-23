@@ -95,7 +95,7 @@ make flash_evk SOC=iMX8MP
 mkdir -p $ROOTDIR/images/tmp/
 cd $ROOTDIR/images
 dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
-mkdosfs tmp/part1.fat32
+env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 
 echo "label linux" > $ROOTDIR/images/extlinux.conf
 echo "        linux ../Image" >> $ROOTDIR/images/extlinux.conf
@@ -109,7 +109,7 @@ mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freesca
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
 dd if=/dev/zero of=microsd.img bs=1M count=301
 dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=microsd.img bs=1K seek=32 conv=notrunc
-parted --script microsd.img mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
+env PATH="$PATH:/sbin:/usr/sbin" parted --script microsd.img mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
 dd if=tmp/part1.fat32 of=microsd.img bs=1M seek=2 conv=notrunc
 dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=microsd.img bs=1M seek=150 conv=notrunc
 echo -e "\n\n*** Image is ready - images/microsd.img"
