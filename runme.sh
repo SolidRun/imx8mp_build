@@ -13,6 +13,7 @@ if [ "x$SHALLOW" == "xtrue" ]; then
         SHALLOW_FLAG="--depth 1"
 fi
 
+REPO_PREFIX=`git log -1 --pretty=format:%h`
 
 export ARCH=arm64
 ROOTDIR=`pwd`
@@ -97,6 +98,8 @@ cd $ROOTDIR/images
 dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 
+IMG=microsd-${REPO_PREFIX}.img
+
 echo "label linux" > $ROOTDIR/images/extlinux.conf
 echo "        linux ../Image" >> $ROOTDIR/images/extlinux.conf
 echo "        fdt ../imx8mp-hummingboard-pulse.dtb" >> $ROOTDIR/images/extlinux.conf
@@ -107,9 +110,9 @@ mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ::/
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
-dd if=/dev/zero of=microsd.img bs=1M count=301
-dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=microsd.img bs=1K seek=32 conv=notrunc
-env PATH="$PATH:/sbin:/usr/sbin" parted --script microsd.img mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
-dd if=tmp/part1.fat32 of=microsd.img bs=1M seek=2 conv=notrunc
-dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=microsd.img bs=1M seek=150 conv=notrunc
-echo -e "\n\n*** Image is ready - images/microsd.img"
+dd if=/dev/zero of=${IMG} bs=1M count=301
+dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
+dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
+dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=${IMG} bs=1M seek=150 conv=notrunc
+echo -e "\n\n*** Image is ready - images/${IMG}"
