@@ -1,7 +1,7 @@
-# SolidRun's i.MX8MP based HummingBoard Pulse build scripts
+# SolidRun's i.MX8MNano based Compact build scripts
 
 ## Introduction
-Main intention of this repository is to a buildroot based build environment for i.MX8MP based product evaluation.
+Main intention of this repository is to a buildroot based build environment for i.MX8MN based product evaluation.
 
 The build script provides ready to use images that can be deployed on micro SD and future on eMMC.
 
@@ -13,4 +13,4 @@ For SD card bootable images, plug in a micro SD into your machine and run the fo
 
 `sudo dd if=images/microsd-<hash>.img of=/dev/sdX`
 
-And then set the HummingBoard Pulse DIP switch to boot from SD
+And then set the Compact to boot from SD
