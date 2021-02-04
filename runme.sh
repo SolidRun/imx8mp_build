@@ -2,15 +2,15 @@
 set -e
 
 ### General setup
-NXP_REL=rel_imx_5.4.47_2.2.0
-UBOOT_NXP_REL=imx_v2020.04_5.4.47_2.2.0
+NXP_REL=rel_imx_5.4.70_2.3.0
+UBOOT_NXP_REL=imx_v2020.04_5.4.70_2.3.0
 #rel_imx_5.4.24_2.1.0
 #imx_v2020.04_5.4.24_2.1.0
-BUILDROOT_VERSION=2020.02
+BUILDROOT_VERSION=2020.11.2
 ###
 SHALLOW=${SHALLOW:false}
 if [ "x$SHALLOW" == "xtrue" ]; then
-        SHALLOW_FLAG="--depth 1"
+        SHALLOW_FLAG="--depth 500"
 fi
 
 REPO_PREFIX=`git log -1 --pretty=format:%h`
@@ -36,13 +36,21 @@ for i in $COMPONENTS; do
 	fi
 done
 
+if [[ ! -d $ROOTDIR/build/mfgtools ]]; then
+	cd $ROOTDIR/build
+	git clone https://github.com/NXPmicro/mfgtools.git -b uuu_1.4.77
+	cd mfgtools
+	git am ../../patches/mfgtools/*.patch
+	cmake .
+	make
+fi
 
 if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cd $ROOTDIR/build/
 	mkdir -p firmware
 	cd firmware
-	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-8.7.bin
-	bash firmware-imx-8.7.bin --auto-accept
+	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-8.10.bin
+	bash firmware-imx-8.10.bin --auto-accept
 	cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
 fi
 
