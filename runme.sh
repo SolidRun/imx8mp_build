@@ -27,7 +27,7 @@ if [[ ! -d $ROOTDIR/build/toolchain ]]; then
 fi
 
 echo "** Download Source and Firmware **"
-COMPONENTS="imx-atf uboot-imx"
+COMPONENTS="imx-atf uboot-imx linux-imx"
 mkdir -p build
 for i in $COMPONENTS; do
 	if [[ ! -d $ROOTDIR/build/$i ]]; then
@@ -57,6 +57,11 @@ if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cp ${FW_VERSION}/firmware/ddr/synopsys/ddr4*.bin ${ROOTDIR}/build/uboot-imx/
 fi
 
+if [[ ! -d $ROOTDIR/build/buildroot ]]; then
+        cd $ROOTDIR/build
+        git clone ${SHALLOW_FLAG} https://github.com/buildroot/buildroot -b $BUILDROOT_VERSION
+fi
+
 # Build ATF
 echo "** Building ATF **"
 cd $ROOTDIR/build/imx-atf
@@ -74,3 +79,41 @@ echo "Burn the flash.bin to MicroSD card with offset 32KB"
 
 mkdir -p ${ROOTDIR}/images/tmp/
 cp ${ROOTDIR}/build/uboot-imx/flash.bin ${ROOTDIR}/images/tmp/
+
+# Build buildroot
+echo "** Building buildroot **"
+cd $ROOTDIR/build/buildroot
+cp $ROOTDIR/configs/buildroot_defconfig configs/imx8mn_compact_defconfig
+make imx8mn_compact_defconfig
+make
+
+# Build linux
+echo "** Building Linux kernel **"
+cd $ROOTDIR/build/linux-imx
+make imx_v8_defconfig
+./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/kernel.extra
+make -j32 Image dtbs
+
+# Create disk images
+echo "** Creating disk images **"
+mkdir -p $ROOTDIR/images/tmp/
+cd $ROOTDIR/images
+dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
+env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
+
+IMG=microsd-${REPO_PREFIX}.img
+
+echo "label linux" > $ROOTDIR/images/extlinux.conf
+echo "        linux ../Image" >> $ROOTDIR/images/extlinux.conf
+echo "        fdt ../imx8mn-compact.dtb" >> $ROOTDIR/images/extlinux.conf
+echo "        initrd ../rootfs.cpio.uboot" >> $ROOTDIR/images/extlinux.conf
+#echo "        append root=/dev/mmcblk1p2 rootwait" >> $ROOTDIR/images/extlinux.conf
+mmd -i tmp/part1.fat32 ::/extlinux
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
+mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mn*.dtb ::/
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
+dd if=/dev/zero of=${IMG} bs=1M count=301
+dd if=$ROOTDIR/build/uboot-imx/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
+
