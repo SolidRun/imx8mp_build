@@ -1,0 +1,74 @@
+#!/bin/sh
+
+
+# Start all init scripts in /etc/init.d
+# executing them in numerical order.
+#
+for i in /etc/init.d/S??* ;do
+
+     # Ignore dangling symlinks (if any).
+     [ ! -f "$i" ] && continue
+
+     case "$i" in
+	*.sh)
+	    # Source shell script for speed.
+	    (
+		trap - INT QUIT TSTP
+		set start
+		. $i
+	    )
+	    ;;
+	*)
+	    # No sh extension, so fork subprocess.
+	    $i start
+	    ;;
+    esac
+done
+
+#/sbin/ifconfig eth0 192.168.17.101
+#echo "nameserver 192.168.17.1" > /etc/resolv.conf
+#/sbin/ip route add default via 192.168.17.1
+
+## RF_PWR 
+pin=89
+echo $pin > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio${pin}/direction
+echo 1 > /sys/class/gpio/gpio${pin}/value
+
+# LTE_PWR
+pin=132
+echo $pin > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio${pin}/direction
+echo 1 > /sys/class/gpio/gpio${pin}/value
+
+# LTE_PWR_PWERKEY
+pin=7
+echo $pin > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio${pin}/direction
+echo 1 > /sys/class/gpio/gpio${pin}/value
+
+# LTE RESET_n
+pin=8
+echo $pin > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio${pin}/direction
+pin=8 ;echo 1 > /sys/class/gpio/gpio${pin}/value
+
+# HUB_RST
+pin=131
+echo $pin > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio${pin}/direction
+echo 1 > /sys/class/gpio/gpio${pin}/value
+
+## Enable Nina U-Blox 
+### BT_PWR_EN (GPIO1_IO06), BT_RST(GPIO1_IO05)
+### BT_PWR_EN
+pin=6
+echo $pin > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio${pin}/direction
+echo 1 > /sys/class/gpio/gpio${pin}/value
+
+### BT_RST
+pin=5
+echo $pin > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio${pin}/direction
+echo 1 > /sys/class/gpio/gpio${pin}/value
