@@ -14,10 +14,10 @@ fi
 
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
+ROOTDIR=`pwd`
 export PATH=$ROOTDIR/build/toolchain/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin:$PATH
 export CROSS_COMPILE=aarch64-linux-gnu-
 export ARCH=arm64
-ROOTDIR=`pwd`
 
 if [[ ! -d $ROOTDIR/build/toolchain ]]; then
 	mkdir -p $ROOTDIR/build/toolchain
@@ -107,7 +107,6 @@ echo "label linux" > $ROOTDIR/images/extlinux.conf
 echo "        linux ../Image" >> $ROOTDIR/images/extlinux.conf
 echo "        fdt ../imx8mn-compact.dtb" >> $ROOTDIR/images/extlinux.conf
 echo "        initrd ../rootfs.cpio.uboot" >> $ROOTDIR/images/extlinux.conf
-#echo "        append root=/dev/mmcblk1p2 rootwait" >> $ROOTDIR/images/extlinux.conf
 mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
@@ -116,4 +115,7 @@ mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.u
 dd if=/dev/zero of=${IMG} bs=1M count=301
 dd if=$ROOTDIR/build/uboot-imx/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
+dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
+dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=${IMG} bs=1M seek=150 conv=notrunc
+echo -e "\n\n*** Image is ready - images/${IMG}"
 
