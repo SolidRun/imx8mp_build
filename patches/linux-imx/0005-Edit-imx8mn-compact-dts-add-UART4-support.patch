@@ -1,0 +1,47 @@
+From 997e9118664513120493b69bf4c23b75e4fbc06d Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 28 Apr 2021 13:38:37 +0300
+Subject: [PATCH] Edit imx8mn compact dts: add UART4 support
+
+---
+ .../arm64/boot/dts/freescale/imx8mn-compact.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 7f315e5d3b93..4f426d460cd1 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -266,6 +266,13 @@
+ 		>;
+ 	};
+ 
++        pinctrl_uart4: uart4grp {
++                fsl,pins = <
++                        MX8MN_IOMUXC_UART4_RXD_UART4_DCE_RX             0x140
++                        MX8MN_IOMUXC_UART4_TXD_UART4_DCE_TX             0x140
++                >;
++        };
++
+ 	pinctrl_usdhc1_gpio: usdhc1grpgpio {
+ 		fsl,pins = <
+ 			MX8MN_IOMUXC_SD1_RESET_B_GPIO2_IO10	0x41
+@@ -609,6 +616,16 @@
+ 	status = "okay";
+ };
+ 
++&uart4 { /* U-BLOX Nina B1 */
++        pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart4>;
++	assigned-clocks = <&clk IMX8MN_CLK_UART4>;
++	assigned-clock-parents = <&clk IMX8MN_SYS_PLL1_80M>;
++	/delete-property/ dmas;
++        /delete-property/ dmas-names;
++        status = "okay";
++};
++
+ &usdhc1 { /* WIFI */
+         #address-cells = <1>;
+         #size-cells = <0>;
+-- 
+2.25.1
+
