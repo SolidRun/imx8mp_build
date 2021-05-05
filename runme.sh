@@ -3,6 +3,7 @@ set -e
 
 ### General setup
 NXP_REL=rel_imx_5.4.70_2.3.0
+LINUX_NXP_REL=rel_imx_5.4.47_2.2.0
 UBOOT_NXP_REL=imx_v2020.04_5.4.70_2.3.0
 FW_VERSION=firmware-imx-8.10
 BUILDROOT_VERSION=2020.02
@@ -34,6 +35,8 @@ for i in $COMPONENTS; do
 		cd $ROOTDIR/build/
 		if [ "x$i" == "xuboot-imx" ]; then
 			CHECKOUT=$UBOOT_NXP_REL
+		elif [ "x$i" == "xlinux-imx" ]; then
+			CHECKOUT=$LINUX_NXP_REL
 		else
 			CHECKOUT=$NXP_REL
 		fi
@@ -112,8 +115,7 @@ mmd -i tmp/part1.fat32 ::/boot
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/boot/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/imx8mn-compact.dtb ::/boot/imx8mn-compact.dtb
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/boot/rootfs.cpio.uboot
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio ::/boot/rootfs.cpio
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/boot/rootfs.cpio
 dd if=/dev/zero of=${IMG} bs=1M count=301
 dd if=$ROOTDIR/build/uboot-imx/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
