@@ -76,6 +76,7 @@ echo "** Building u-boot **"
 cd $ROOTDIR/build/uboot-imx/
 export ATF_LOAD_ADDR=0x960000
 make imx8mn_solidrun_defconfig
+./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/uboot.extra
 make flash.bin
 echo "The boot loader image - ./build/uboot-imx/flash.bin "
 echo "Burn the flash.bin to MicroSD card with offset 32KB"
