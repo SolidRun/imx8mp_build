@@ -1,48 +1,47 @@
-From 2b9cfa10aa67490448d38374a4b492ac29a49205 Mon Sep 17 00:00:00 2001
-From: Yazan Shhady <yazan.shhady@solid-run.com>
-Date: Tue, 4 May 2021 17:32:41 +0300
-Subject: [PATCH] Edit imx8mn compact dts: add canBus support
+From 5124966d3b167902f7cfab4b4f0f860fb2f26e69 Mon Sep 17 00:00:00 2001
+From: Alvaro-solidrun <alvaro.karsz@solid-run.com>
+Date: Mon, 10 May 2021 13:12:15 +0300
+Subject: [PATCH] Imx8mn - Add CAN support in devicetree
 
 ---
  .../boot/dts/freescale/imx8mn-compact.dts     | 62 +++++--------------
- 1 file changed, 15 insertions(+), 47 deletions(-)
+ 1 file changed, 16 insertions(+), 46 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
-index 80303b408282..bae913a85622 100755
+index 4f426d460cd1..824dfed9447b 100755
 --- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
 +++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
 @@ -55,6 +55,14 @@
  		enable-active-high;
  	};
  
-+	clocks {
-+		clk24m: clk24m {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <24000000>;
-+		};
-+	};
++      clocks {
++               clk24m: clk24m {
++                       compatible = "fixed-clock";
++                       #clock-cells = <0>;
++                       clock-frequency = <24000000>;
++               };
++       };
 +
  };
  
  &iomuxc {
-@@ -105,24 +113,6 @@
-                 >;
+@@ -106,23 +114,6 @@
          };
  
--
+ 
 -	pinctrl_ecspi2: ecspi2grp {
 -		fsl,pins = <
--		      MX8MN_IOMUXC_ECSPI2_SCLK_ECSPI2_SCLK            0x82
+-        	      MX8MN_IOMUXC_ECSPI2_SCLK_ECSPI2_SCLK            0x82
 -                      MX8MN_IOMUXC_ECSPI2_MOSI_ECSPI2_MOSI            0x82
 -                      MX8MN_IOMUXC_ECSPI2_MISO_ECSPI2_MISO            0x82
 -		      MX8MN_IOMUXC_ECSPI2_SS0_GPIO5_IO13              0x40000 /*SPI CS*/
 -		>;
--	};
+-	};	
 -
 -        pinctrl_can: cangrp {
 -                fsl,pins = <
--		       //MX51_PAD_CSI2_PIXCLK__GPIO4_15          0x80000000      /* nReset */
+-        	       //MX51_PAD_CSI2_PIXCLK__GPIO4_15          0x80000000      /* nReset */
 -                       //MX51_PAD_GPIO1_1__GPIO1_1               0x80000000      /* IRQ */
 -                >;
 -        };
@@ -51,7 +50,7 @@ index 80303b408282..bae913a85622 100755
  	pinctrl_mipi_dsi_en: mipi_dsi_en {
  		fsl,pins = <
  			MX8MN_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x16
-@@ -679,44 +669,22 @@
+@@ -679,46 +670,25 @@
  	status = "okay";
  };
  
@@ -74,20 +73,20 @@ index 80303b408282..bae913a85622 100755
  &ecspi2 {
          pinctrl-names = "default";
          pinctrl-0 = <&pinctrl_ecspi2>;
-+        fsl,spi-num-chipselects = <1>;
++	fsl,spi-num-chipselects = <1>;
          cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>; //GPIO5_IO13
          status = "okay";
-+        #address-cells = <1>;
-+        #size-cells = <0>;
- 
++	#address-cells = <1>;
++	#size-cells = <0>;
+ 	
 -	spidev0: spi@0 {
--		compatible = "microchip,mcp2515";
+-        	compatible = "microchip,mcp2515";
 -                reg = <0>;
 -                spi-max-frequency = <200000000>;
 -        };
 -/*
          can0: can@0 {
-+                clocks = <&clk24m>;
++		clocks = <&clk24m>;
 +                compatible = "microchip,mcp25xxfd";
                  pinctrl-names = "default";
 -                //pinctrl-0 = <&pinctrl_can>;
@@ -96,13 +95,16 @@ index 80303b408282..bae913a85622 100755
 -                clocks = <&clk24M>;
 -                spi-max-frequency = <10000000>;
 -                //interrupt-parent = <&gpio1>;
-+                spi-max-frequency = <20000000>;
-+                interrupt-parent = <&gpio5>;
++		spi-max-frequency = <20000000>;
++		interrupt-parent = <&gpio5>;
                  interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
 -                //vdd-supply = <&reg_can>;
          };
 -*/
++
  };
+ 
+ 
 -- 
 2.25.1
 
