@@ -88,6 +88,11 @@ cp ${ROOTDIR}/build/uboot-imx/flash.bin ${ROOTDIR}/images/tmp/
 echo "** Building buildroot **"
 cd $ROOTDIR/build/buildroot
 cp $ROOTDIR/configs/buildroot_defconfig configs/imx8mn_compact_defconfig
+#replace openocd folder
+rm -rf $ROOTDIR/build/buildroot/package/openocd
+mkdir -p $ROOTDIR/build/buildroot/package/openocd
+cp -r $ROOTDIR/packages/openocd/* $ROOTDIR/build/buildroot/package/openocd/
+
 make imx8mn_compact_defconfig
 make
 
