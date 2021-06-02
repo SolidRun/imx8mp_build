@@ -1,0 +1,28 @@
+From 3a3a4991d02cb51480e99ea06aed64ea984bf53e Mon Sep 17 00:00:00 2001
+From: Alvaro-solidrun <alvaro.karsz@solid-run.com>
+Date: Wed, 2 Jun 2021 14:46:11 +0300
+Subject: [PATCH] Imx8mn - enable pull resistor field in devicetree for RGMII
+ RD0 and RD1
+
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 824dfed9447b..11adc46d645d 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -78,8 +78,8 @@
+ 			MX8MN_IOMUXC_ENET_TD0_ENET1_RGMII_TD0	0x1f
+ 			MX8MN_IOMUXC_ENET_RD3_ENET1_RGMII_RD3	0x91
+ 			MX8MN_IOMUXC_ENET_RD2_ENET1_RGMII_RD2	0x91
+-			MX8MN_IOMUXC_ENET_RD1_ENET1_RGMII_RD1	0x91 /*PHY-Address1 */
+-			MX8MN_IOMUXC_ENET_RD0_ENET1_RGMII_RD0	0x91 /*PHY-Address0 */
++			MX8MN_IOMUXC_ENET_RD1_ENET1_RGMII_RD1	0x191 /*PHY-Address1 */
++			MX8MN_IOMUXC_ENET_RD0_ENET1_RGMII_RD0	0x191 /*PHY-Address0 */
+ 			MX8MN_IOMUXC_ENET_TXC_ENET1_RGMII_TXC	0x1f
+ 			MX8MN_IOMUXC_ENET_RXC_ENET1_RGMII_RXC	0x91
+ 			MX8MN_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91
+-- 
+2.25.1
+
