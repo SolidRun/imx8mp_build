@@ -1,0 +1,65 @@
+From 801be7b487a7fa6ffe5e94618097d9f7070888f6 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 2 Jun 2021 19:33:28 +0300
+Subject: [PATCH] Edit imx8mp-compact dts - add leds support
+
+---
+ .../boot/dts/freescale/imx8mn-compact.dts     | 35 +++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index fbabd6c0a753..22409fc95f93 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -24,6 +24,33 @@
+                 #reset-cells = <0>;
+         };
+ 
++	leds {
++		/*
++	        LED1 -> GPIO1_IO11
++	        LED2 -> GPIO1_IO12
++	        LED3 -> GPIO1_IO13
++		*/
++                compatible = "gpio-leds";
++                pinctrl-names = "default";
++
++		led1 {
++			lable = "led1";
++		        gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
++		        default-state = "on";
++		};
++		led2 {
++			lable = "led2";
++		        gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
++		        default-state = "off";
++		};
++		led3 {
++			lable = "led3";
++		        gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
++		        default-state = "on";
++		};
++
++        };
++
+         reg_usb1_host_vbus: regulator-usb1-vbus {
+                 compatible = "regulator-fixed";
+                 regulator-name = "usb1_host_vbus";
+@@ -426,6 +453,14 @@
+ 		>;
+         };
+ 
++	pinctrl_gpio_led: gpioledgrp {
++                fsl,pins = <
++			MX8MN_IOMUXC_GPIO1_IO11_GPIO1_IO11    0x19
++			MX8MN_IOMUXC_GPIO1_IO12_GPIO1_IO12    0x19
++			MX8MN_IOMUXC_GPIO1_IO13_GPIO1_IO13    0x19
++                >;
++        };
++
+ };
+ 
+ &i2c2 {
+-- 
+2.25.1
+
