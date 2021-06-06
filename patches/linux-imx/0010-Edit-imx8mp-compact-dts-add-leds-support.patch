@@ -27,7 +27,7 @@ index fbabd6c0a753..22409fc95f93 100755
 +		led1 {
 +			lable = "led1";
 +		        gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-+		        default-state = "on";
++		        default-state = "off";
 +		};
 +		led2 {
 +			lable = "led2";
@@ -37,7 +37,7 @@ index fbabd6c0a753..22409fc95f93 100755
 +		led3 {
 +			lable = "led3";
 +		        gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-+		        default-state = "on";
++		        default-state = "off";
 +		};
 +
 +        };
