@@ -93,6 +93,11 @@ rm -rf $ROOTDIR/build/buildroot/package/openocd
 mkdir -p $ROOTDIR/build/buildroot/package/openocd
 cp -r $ROOTDIR/packages/openocd/* $ROOTDIR/build/buildroot/package/openocd/
 
+#change input-event-daemon priority to a higher one in order to catch reset event earlier
+rm -rf $ROOTDIR/build/buildroot/package/input-event-daemon
+mkdir -p $ROOTDIR/build/buildroot/package/input-event-daemon
+cp -r $ROOTDIR/packages/input-event-daemon/* $ROOTDIR/build/buildroot/package/input-event-daemon/
+
 make imx8mn_compact_defconfig
 make
 
