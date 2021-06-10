@@ -1,0 +1,50 @@
+From 4cce79b712beed64b81773646a2133ebb224eb28 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 10 Jun 2021 12:20:12 +0300
+Subject: [PATCH] arm64: dts: imx8mp: Edit imx8mp-hummingboard-pulse: Enable
+ the USB regulator of the CuBox-M
+
+Signed-off-by: Yazan Shhady <yazan.shhady@solid-run.com>
+---
+ .../freescale/imx8mp-hummingboard-pulse.dts    | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
+index 5f9b24547c50..3c5fb8869304 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse.dts
+@@ -83,6 +83,18 @@
+ 		regulator-always-on;
+ 	};
+ 
++        reg_usb2_host_vbus: regulator-usb2-vbus {
++                compatible = "regulator-fixed";
++                regulator-name = "usb2_host_vbus";
++                pinctrl-names = "default";
++                pinctrl-0 = <&pinctrl_usb2_vbus>;
++                regulator-min-microvolt = <5000000>;
++                regulator-max-microvolt = <5000000>;
++                gpio = <&gpio1 7 GPIO_ACTIVE_HIGH>;
++                enable-active-high;
++                regulator-always-on;
++        };
++
+ 	reg_sd1_vmmc: sd1_regulator {
+ 			compatible = "regulator-fixed";
+ 			regulator-name = "WLAN_EN";
+@@ -885,6 +897,12 @@
+ 			MX8MP_IOMUXC_GPIO1_IO14__GPIO1_IO14	0x19
+ 		>;
+ 	};
++
++        pinctrl_usb2_vbus: usb2grp {
++                fsl,pins = <
++                        MX8MP_IOMUXC_GPIO1_IO07__GPIO1_IO07     0x19
++                >;
++        };
+ 	
+ 	pinctrl_usdhc1_gpio: usdhc1grp-gpio {
+ 		fsl,pins = <
+-- 
+2.25.1
+
