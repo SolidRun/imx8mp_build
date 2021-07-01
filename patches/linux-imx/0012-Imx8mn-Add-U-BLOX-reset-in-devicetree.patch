@@ -1,0 +1,118 @@
+From bb47958130409d026678e8e7003f864d7abfa9d8 Mon Sep 17 00:00:00 2001
+From: Alvaro-Karsz <alvaro.karsz@solid-run.com>
+Date: Thu, 1 Jul 2021 16:37:44 +0300
+Subject: [PATCH] Imx8mn - Add U-BLOX reset in devicetree
+
+---
+ .../boot/dts/freescale/imx8mn-compact.dts     | 44 +++++++++----------
+ 1 file changed, 21 insertions(+), 23 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 384aa2f68673..0c93106e2555 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -24,6 +24,14 @@
+                 reset-post-delay-ms = <40>;
+                 #reset-cells = <0>;
+         };
++	
++	ublox_reset: ublox-reset {
++                compatible = "gpio-reset";
++                reset-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
++                reset-delay-us = <2000>;
++                reset-post-delay-ms = <40>;
++                #reset-cells = <0>;
++	};
+ 
+ 	leds {
+ 		/*
+@@ -110,6 +118,7 @@
+ 
+ &iomuxc {
+ 	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hog>;
+ 
+ 	pinctrl_fec1: fec1grp {
+ 		fsl,pins = <
+@@ -131,6 +140,13 @@
+ 		>;
+ 	};
+ 
++	pinctrl_hog: hoggrp {
++		fsl,pins = <
++			/* GPIO1_IO06 U-BLOX ENABLE - SET PULLUP */
++			MX8MN_IOMUXC_GPIO1_IO06_GPIO1_IO6         0x141
++		>;
++	};
++
+ 	pinctrl_flexspi0: flexspi0grp {
+ 		fsl,pins = <
+ 			MX8MN_IOMUXC_NAND_ALE_QSPI_A_SCLK 0x1c4
+@@ -257,13 +273,6 @@
+ 		>;
+ 	};
+ 
+-	pinctrl_spdif1: spdif1grp {
+-		fsl,pins = <
+-			MX8MN_IOMUXC_SPDIF_TX_SPDIF1_OUT	0xd6
+-			MX8MN_IOMUXC_SPDIF_RX_SPDIF1_IN		0xd6
+-		>;
+-	};
+-
+ 	pinctrl_typec1: typec1grp {
+ 		fsl,pins = <
+ 			MX8MN_IOMUXC_SD1_STROBE_GPIO2_IO11	0x159
+@@ -348,11 +357,6 @@
+ 		>;
+ 	};
+ 
+-	pinctrl_usdhc2_gpio: usdhc2grpgpio {
+-		fsl,pins = <
+-			MX8MN_IOMUXC_GPIO1_IO15_GPIO1_IO15	0x1c4
+-		>;
+-	};
+ 
+ 	pinctrl_usdhc2: usdhc2grp {
+ 		fsl,pins = <
+@@ -457,16 +461,9 @@
+ 		>;
+ 	};
+ 
+-	pinctrl_csi_rst: csi_rst_grp {
+-		fsl,pins = <
+-			MX8MN_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
+-			MX8MN_IOMUXC_GPIO1_IO14_CCMSRCGPCMIX_CLKO1	0x59
+-		>;
+-	};
+-
+ 	pinctrl_usb1_vbus: usb1grp {
+                 fsl,pins = <
+-			MX8MN_IOMUXC_SPDIF_EXT_CLK_GPIO5_IO5     0x19 /* USB_HUB_PWR_EN */        
++			MX8MN_IOMUXC_SPDIF_EXT_CLK_GPIO5_IO5     0x19 /* USB_HUB_PWR_EN */       
+ 		>;
+         };
+ 
+@@ -675,6 +672,7 @@
+ 	assigned-clock-parents = <&clk IMX8MN_SYS_PLL1_80M>;
+ 	/delete-property/ dmas;
+         /delete-property/ dmas-names;
++	resets = <&ublox_reset>;
+         status = "okay";
+ };
+ 
+@@ -705,9 +703,9 @@
+ 
+ &usdhc2 {
+ 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
+-	pinctrl-0 = <&pinctrl_usdhc2>, <&pinctrl_usdhc2_gpio>;
+-	pinctrl-1 = <&pinctrl_usdhc2_100mhz>, <&pinctrl_usdhc2_gpio>;
+-	pinctrl-2 = <&pinctrl_usdhc2_200mhz>, <&pinctrl_usdhc2_gpio>;
++	pinctrl-0 = <&pinctrl_usdhc2>;
++	pinctrl-1 = <&pinctrl_usdhc2_100mhz>;
++	pinctrl-2 = <&pinctrl_usdhc2_200mhz>;
+ 	//cd-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+ 	bus-width = <4>;
+ 	//vmmc-supply = <&reg_usdhc2_vmmc>;
+-- 
+2.25.1
+

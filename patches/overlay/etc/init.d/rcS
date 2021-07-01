@@ -94,22 +94,4 @@ pin=131
 echo $pin > /sys/class/gpio/export
 echo out > /sys/class/gpio/gpio${pin}/direction
 echo 1 > /sys/class/gpio/gpio${pin}/value
-#
-#
-#####################################################################################################################
-# Enable Nina U-Blox
-## BT_PWR_EN (GPIO1_IO06), BT_RST(GPIO1_IO05)
-## BT_PWR_EN
-pin=6
-echo $pin > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio${pin}/direction
-echo 1 > /sys/class/gpio/gpio${pin}/value
-
-## BT_RST
-pin=5
-echo $pin > /sys/class/gpio/export
-#echo out > /sys/class/gpio/gpio${pin}/direction
-#echo 1 > /sys/class/gpio/gpio${pin}/value
-#
-#
 #####################################################################################################################
