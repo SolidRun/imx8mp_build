@@ -98,7 +98,7 @@ rm -rf $ROOTDIR/build/buildroot/package/input-event-daemon
 mkdir -p $ROOTDIR/build/buildroot/package/input-event-daemon
 cp -r $ROOTDIR/packages/input-event-daemon/* $ROOTDIR/build/buildroot/package/input-event-daemon/
 
-make imx8mn_compact_defconfig
+make BR2_EXTERNAL=${ROOTDIR}/packages/buildroot-external/nvmemfuse  imx8mn_compact_defconfig
 make
 
 # Build linux
