@@ -1,0 +1,72 @@
+From 0100ec2592c15ce959ef545d8e3f5563af2ae9c8 Mon Sep 17 00:00:00 2001
+From: Alvaro-Karsz <alvaro.karsz@solid-run.com>
+Date: Sun, 18 Jul 2021 17:01:49 +0300
+Subject: [PATCH] Imx8mn - LTE: 1) define LTE power and enable as pullup in
+ Devicetree. 2) Add USB Hub and LTE resets in devicetree
+
+---
+ .../boot/dts/freescale/imx8mn-compact.dts     | 27 ++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 0c93106e2555..9d63a3462724 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -33,6 +33,24 @@
+                 #reset-cells = <0>;
+ 	};
+ 
++	hub-reset {
++		compatible = "gpio-reset";
++                reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
++                reset-delay-us = <2000>;
++                reset-post-delay-ms = <40>;
++                #reset-cells = <0>;
++	};
++
++	lte-reset {
++		compatible = "gpio-reset";
++                reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
++                reset-delay-us = <2000>;
++                reset-post-delay-ms = <40>;
++                #reset-cells = <0>;
++	};
++
++
++
+ 	leds {
+ 		/*
+ 	        LED1 -> GPIO1_IO11
+@@ -106,6 +124,7 @@
+ 			};
+ 	};
+ 
++
+       clocks {
+                clk24m: clk24m {
+                        compatible = "fixed-clock";
+@@ -119,7 +138,7 @@
+ &iomuxc {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_hog>;
+-
++	
+ 	pinctrl_fec1: fec1grp {
+ 		fsl,pins = <
+ 			MX8MN_IOMUXC_ENET_MDC_ENET1_MDC		0x3
+@@ -144,6 +163,12 @@
+ 		fsl,pins = <
+ 			/* GPIO1_IO06 U-BLOX ENABLE - SET PULLUP */
+ 			MX8MN_IOMUXC_GPIO1_IO06_GPIO1_IO6         0x141
++			/* CELL_VBUS_CTRL - POWER TO LTE - PULLUP */
++			MX8MN_IOMUXC_SPDIF_RX_GPIO5_IO4		  0x141
++			/* RF_PWR  - ENABLE LTE POWER - PULLUP*/
++			MX8MN_IOMUXC_SAI5_MCLK_GPIO3_IO25  	  0x141
++			/* LTE PWRKEY - PULL DOWN*/
++			MX8MN_IOMUXC_GPIO1_IO08_GPIO1_IO8	  0x101
+ 		>;
+ 	};
+ 
+-- 
+2.25.1
+

@@ -64,34 +64,3 @@ i2cset -y 2 0x20 0x03 0x0f -f
 #
 #
 #####################################################################################################################
-# Enable the LTE Modem
-## RF_PWR
-pin=89
-echo $pin > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio${pin}/direction
-echo 1 > /sys/class/gpio/gpio${pin}/value
-
-# LTE_PWR
-pin=132
-echo $pin > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio${pin}/direction
-echo 1 > /sys/class/gpio/gpio${pin}/value
-
-# LTE_PWR_PWERKEY
-pin=7
-echo $pin > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio${pin}/direction
-echo 1 > /sys/class/gpio/gpio${pin}/value
-
-# LTE RESET_n
-pin=8
-echo $pin > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio${pin}/direction
-echo 1 > /sys/class/gpio/gpio${pin}/value
-
-# HUB_RST
-pin=131
-echo $pin > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio${pin}/direction
-echo 1 > /sys/class/gpio/gpio${pin}/value
-#####################################################################################################################
