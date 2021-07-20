@@ -1,0 +1,28 @@
+From 1c27de9fca5315a5c8d19a31df7903228ed70ce2 Mon Sep 17 00:00:00 2001
+From: Alvaro-Karsz <alvaro.karsz@solid-run.com>
+Date: Tue, 20 Jul 2021 14:31:18 +0300
+Subject: [PATCH] Imx8mn Wifi firmware load timeout. Change fallback_table values
+ from 60 sec to 3 sec.
+
+---
+ drivers/base/firmware_loader/fallback_table.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/base/firmware_loader/fallback_table.c b/drivers/base/firmware_loader/fallback_table.c
+index ba9d30b28edc..8b86e55bd85d 100644
+--- a/drivers/base/firmware_loader/fallback_table.c
++++ b/drivers/base/firmware_loader/fallback_table.c
+@@ -18,8 +18,8 @@
+ 
+ struct firmware_fallback_config fw_fallback_config = {
+ 	.force_sysfs_fallback = IS_ENABLED(CONFIG_FW_LOADER_USER_HELPER_FALLBACK),
+-	.loading_timeout = 60,
+-	.old_timeout = 60,
++	.loading_timeout = 3,
++	.old_timeout = 3,
+ };
+ EXPORT_SYMBOL_GPL(fw_fallback_config);
+ 
+-- 
+2.25.1
+
