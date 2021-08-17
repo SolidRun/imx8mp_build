@@ -1,0 +1,54 @@
+From 0ec82691a3a8309aa29c9eefb9f541dff254a9cb Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 17 Aug 2021 19:10:11 +0300
+Subject: [PATCH] Imx8mn RS485 fix: change UART3 to DTE mode
+
+---
+ .../boot/dts/freescale/imx8mn-compact.dts     | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 9d63a3462724..afb880e82e56 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -327,14 +327,14 @@
+ 		>;
+ 	};
+ 
+-	pinctrl_uart3: uart3grp {
+-		fsl,pins = <
+-			MX8MN_IOMUXC_ECSPI1_SCLK_UART3_DCE_RX		0x140
+-			MX8MN_IOMUXC_ECSPI1_MOSI_UART3_DCE_TX		0x140
+-			MX8MN_IOMUXC_ECSPI1_SS0_UART3_DCE_RTS_B		0x140
+-			MX8MN_IOMUXC_ECSPI1_MISO_UART3_DCE_CTS_B	0x140
+-		>;
+-	};
++        pinctrl_uart3: uart3grp {
++                fsl,pins = <
++                        MX8MN_IOMUXC_ECSPI1_MOSI_UART3_DTE_RX           0x140
++                        MX8MN_IOMUXC_ECSPI1_SCLK_UART3_DTE_TX          0x140
++                        MX8MN_IOMUXC_ECSPI1_MISO_UART3_DTE_RTS_B       0x140
++                        MX8MN_IOMUXC_ECSPI1_SS0_UART3_DTE_CTS_B        0x140
++                >;
++        };
+ 
+         pinctrl_uart4: uart4grp {
+                 fsl,pins = <
+@@ -681,12 +681,13 @@
+ 	status = "okay";
+ };
+ 
+-&uart3 {
++&uart3 { /* RS485 */
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_uart3>;
+ 	assigned-clocks = <&clk IMX8MN_CLK_UART3>;
+ 	assigned-clock-parents = <&clk IMX8MN_SYS_PLL1_80M>;
+ 	fsl,uart-has-rtscts;
++	fsl,dte-mode;
+ 	status = "okay";
+ };
+ 
+-- 
+2.25.1
+
