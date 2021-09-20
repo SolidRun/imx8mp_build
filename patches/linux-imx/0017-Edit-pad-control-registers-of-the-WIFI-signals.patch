@@ -1,0 +1,44 @@
+From 2e60220d7961cb02ccb5989beea254a427f6c289 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 20 Sep 2021 16:07:29 +0300
+Subject: [PATCH] Edit pad control registers of the WIFI signals
+
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index afb880e82e56..c818eb4b7b1e 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -362,7 +362,7 @@
+ 
+ 	pinctrl_usdhc1_100mhz: usdhc1grp100mhz {
+ 		fsl,pins = <
+-			MX8MN_IOMUXC_SD1_CLK_USDHC1_CLK		0x194
++			MX8MN_IOMUXC_SD1_CLK_USDHC1_CLK		0x180
+ 			MX8MN_IOMUXC_SD1_CMD_USDHC1_CMD		0x1d4
+ 			MX8MN_IOMUXC_SD1_DATA0_USDHC1_DATA0	0x1d4
+ 			MX8MN_IOMUXC_SD1_DATA1_USDHC1_DATA1	0x1d4
+@@ -373,12 +373,12 @@
+ 
+ 	pinctrl_usdhc1_200mhz: usdhc1grp200mhz {
+ 		fsl,pins = <
+-			MX8MN_IOMUXC_SD1_CLK_USDHC1_CLK		0x196
+-			MX8MN_IOMUXC_SD1_CMD_USDHC1_CMD		0x1d6
+-			MX8MN_IOMUXC_SD1_DATA0_USDHC1_DATA0	0x1d6
+-			MX8MN_IOMUXC_SD1_DATA1_USDHC1_DATA1	0x1d6
+-			MX8MN_IOMUXC_SD1_DATA2_USDHC1_DATA2	0x1d6
+-			MX8MN_IOMUXC_SD1_DATA3_USDHC1_DATA3	0x1d6
++			MX8MN_IOMUXC_SD1_CLK_USDHC1_CLK		0x180
++			MX8MN_IOMUXC_SD1_CMD_USDHC1_CMD		0x1d0
++			MX8MN_IOMUXC_SD1_DATA0_USDHC1_DATA0	0x1d0
++			MX8MN_IOMUXC_SD1_DATA1_USDHC1_DATA1	0x1d0
++			MX8MN_IOMUXC_SD1_DATA2_USDHC1_DATA2	0x1d0
++			MX8MN_IOMUXC_SD1_DATA3_USDHC1_DATA3	0x1d0
+ 		>;
+ 	};
+ 
+-- 
+2.25.1
+
