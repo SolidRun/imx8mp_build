@@ -2,8 +2,15 @@
 set -e
 
 ### General setup
+# ====================================== #
+# git checkout tags/v1.0 -b v1.0-branch
+MKIMG_REL=lf-5.10.72_2.2.0
+UBOOT_NXP_REL=lf_v2021.04
+LINUX_REL=lf_v2021.04
+# ====================================== #
 NXP_REL=rel_imx_5.4.70_2.3.0
-UBOOT_NXP_REL=imx_v2020.04_5.4.70_2.3.0
+# UBOOT_NXP_REL=imx_v2020.04_5.4.70_2.3.0
+# ====================================== # 
 #rel_imx_5.4.24_2.1.0
 #imx_v2020.04_5.4.24_2.1.0
 BUILDROOT_VERSION=2020.11.2
@@ -18,13 +25,17 @@ REPO_PREFIX=`git log -1 --pretty=format:%h`
 export ARCH=arm64
 ROOTDIR=`pwd`
 
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage"
+COMPONENTS="imx-atf uboot-imx linux-imx"
 mkdir -p build
 for i in $COMPONENTS; do
 	if [[ ! -d $ROOTDIR/build/$i ]]; then
 		cd $ROOTDIR/build/
 		if [ "x$i" == "xuboot-imx" ]; then
 			CHECKOUT=$UBOOT_NXP_REL
+		elif [ "x$i" == "linux-imx" ]; then 
+			CHECKOUT=$LINUX_REL
+		elif [ "x$i" == "imx-mkimage" ]; then 
+			CHECKOUT=$MKIMG_REL
 		else
 			CHECKOUT=$NXP_REL
 		fi
@@ -51,7 +62,7 @@ if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cd firmware
 	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-8.10.bin
 	bash firmware-imx-8.10.bin --auto-accept
-	cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
+	cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") $ROOTDIR/build/uboot-imx/
 fi
 
 if [[ ! -d $ROOTDIR/build/buildroot ]]; then
@@ -69,19 +80,24 @@ make
 export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
 
 # Build ATF
+echo " # ============ =========== ======= ATF ===== ==== === === === == #"
 echo "*** Building ATF"
+sleep 2
 cd $ROOTDIR/build/imx-atf
 make -j32 PLAT=imx8mp bl31
-cp build/imx8mp/release/bl31.bin $ROOTDIR/build/imx-mkimage/iMX8M/
+cp build/imx8mp/release/bl31.bin $ROOTDIR/build/uboot-imx/
 
 # Build u-boot
 echo "*** Building u-boot"
 cd $ROOTDIR/build/uboot-imx/
 make imx8mp_solidrun_defconfig
-make -j 32
+make flash.bin ATF_LOAD_ADDR=0x970000 -j 32
+cp $ROOTDIR/build/uboot-imx/flash.bin $ROOTDIR/images/
+echo "Flash the $ROOTDIR/build/uboot-imx/flash.bin with Offset 32KB"
+
 set +e
-cp -v $(find . | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mkimage$/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
-cp tools/mkimage ${ROOTDIR}/build//imx-mkimage/iMX8M/mkimage_uboot
+#cp -v $(find . | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mkimage$/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
+#cp tools/mkimage ${ROOTDIR}/build//imx-mkimage/iMX8M/mkimage_uboot
 set -e
 
 # Build linux
@@ -119,7 +135,7 @@ mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ::/
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
 dd if=/dev/zero of=${IMG} bs=1M count=301
-dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
+dd if=$ROOTDIR/images/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
 dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=${IMG} bs=1M seek=150 conv=notrunc
