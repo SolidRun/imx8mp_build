@@ -1,0 +1,55 @@
+From 40e88bfc74ab3eba956137052d9193f307178f36 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sun, 6 Mar 2022 12:44:02 +0200
+Subject: [PATCH 17/22] add identification EEPROMs on SoM and Carrier
+
+---
+ arch/arm/dts/imx8mp-solidrun.dts  | 12 ++++++++++++
+ configs/imx8mp_solidrun_defconfig |  4 ++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/arch/arm/dts/imx8mp-solidrun.dts b/arch/arm/dts/imx8mp-solidrun.dts
+index 1725cae6a7..e14707e7b0 100644
+--- a/arch/arm/dts/imx8mp-solidrun.dts
++++ b/arch/arm/dts/imx8mp-solidrun.dts
+@@ -229,6 +229,12 @@
+ 			};
+ 		};
+ 	};
++
++	eeprom: eeprom@50{
++		compatible = "st,24c02", "atmel,24c02";
++		reg = <0x50>;
++		pagesize = <16>;
++	};
+ };
+ 
+ &i2c2 {
+@@ -270,6 +276,12 @@
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+ 	};
++
++	eeprom_carrier: eeprom@57 {
++		compatible = "st,24c02", "atmel,24c02";
++		reg = <0x57>;
++		pagesize = <8>;
++	};
+ };
+ 
+ &lcdif1 {
+diff --git a/configs/imx8mp_solidrun_defconfig b/configs/imx8mp_solidrun_defconfig
+index d9502772fa..a17b803db1 100644
+--- a/configs/imx8mp_solidrun_defconfig
++++ b/configs/imx8mp_solidrun_defconfig
+@@ -163,3 +163,7 @@ CONFIG_BOOTCOMMAND="run distro_bootcmd"
+ CONFIG_CMD_PXE=y
+ CONFIG_ENV_SIZE=0x2000
+ CONFIG_NET_RANDOM_ETHADDR=y
++
++CONFIG_MISC=y
++CONFIG_I2C_EEPROM=y
++CONFIG_CMD_TLV_EEPROM=y
+-- 
+2.34.1
+
