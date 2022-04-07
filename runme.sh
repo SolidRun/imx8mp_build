@@ -98,6 +98,8 @@ cd $ROOTDIR/build/imx-mkimage/iMX8M
 sed "s/\(^dtbs = \).*/\1imx8mp-solidrun.dtb/;s/\(mkimage\)_uboot/\1/" soc.mak > Makefile
 make clean
 make flash_evk SOC=iMX8MP
+mkdir -p $ROOTDIR/images
+cp -v flash.bin $ROOTDIR/images/u-boot-${REPO_PREFIX}.bin
 
 # Create disk images
 echo "*** Creating disk images"
