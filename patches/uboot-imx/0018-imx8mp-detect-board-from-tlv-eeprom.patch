@@ -1,4 +1,4 @@
-From 98cb0da753a1c7ecf00444332b1fa27859e74fbf Mon Sep 17 00:00:00 2001
+From 6f0ad6aacea9d8ac07abeb96bb960c966655f35d Mon Sep 17 00:00:00 2001
 From: Josua Mayer <josua@solid-run.com>
 Date: Thu, 31 Mar 2022 20:16:22 +0300
 Subject: [PATCH 18/22] imx8mp: detect board from tlv eeprom
@@ -8,7 +8,7 @@ Subject: [PATCH 18/22] imx8mp: detect board from tlv eeprom
  1 file changed, 194 insertions(+), 2 deletions(-)
 
 diff --git a/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c b/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c
-index 51a5cbade6..c5c7f575fe 100644
+index 51a5cbade6..f8ec7fff93 100644
 --- a/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c
 +++ b/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c
 @@ -28,6 +28,9 @@
@@ -173,7 +173,7 @@ index 51a5cbade6..c5c7f575fe 100644
 +
  int board_late_init(void)
  {
-+	char fdtfile[32] = {0};
++	char fdtfile[48] = {0};
  #ifdef CONFIG_ENV_IS_IN_MMC
  	board_late_mmc_env_init();
  #endif
