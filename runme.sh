@@ -83,6 +83,7 @@ echo "Burn the flash.bin to MicroSD card with offset 32KB"
 
 mkdir -p ${ROOTDIR}/images/tmp/
 cp ${ROOTDIR}/build/uboot-imx/flash.bin ${ROOTDIR}/images/tmp/
+cp ${ROOTDIR}/build/uboot-imx/flash.bin u-boot-${REPO_PREFIX}.bin
 
 # Build buildroot
 echo "** Building buildroot **"
@@ -118,15 +119,15 @@ env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 IMG=microsd-${REPO_PREFIX}.img
 
 echo "label linux" > $ROOTDIR/images/extlinux.conf
-echo "        linux ../Image" >> $ROOTDIR/images/extlinux.conf
-echo "        fdt ../imx8mn-compact.dtb" >> $ROOTDIR/images/extlinux.conf
-echo "        initrd ../rootfs.cpio.uboot" >> $ROOTDIR/images/extlinux.conf
+echo "        linux ../boot/Image" >> $ROOTDIR/images/extlinux.conf
+echo "        fdt ../boot/imx8mn-compact.dtb" >> $ROOTDIR/images/extlinux.conf
+echo "        initrd ../boot/rootfs.cpio.uboot" >> $ROOTDIR/images/extlinux.conf
 mmd -i tmp/part1.fat32 ::/extlinux
 mmd -i tmp/part1.fat32 ::/boot
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/boot/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/imx8mn-compact.dtb ::/boot/imx8mn-compact.dtb
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/boot/rootfs.cpio
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/boot/rootfs.cpio.uboot
 dd if=/dev/zero of=${IMG} bs=1M count=301
 dd if=$ROOTDIR/build/uboot-imx/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 300MiB
