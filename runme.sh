@@ -84,7 +84,7 @@ echo "Burn the flash.bin to MicroSD card with offset 32KB"
 
 mkdir -p ${ROOTDIR}/images/tmp/
 cp ${ROOTDIR}/build/uboot-imx/flash.bin ${ROOTDIR}/images/tmp/
-cp ${ROOTDIR}/build/uboot-imx/flash.bin u-boot-${REPO_PREFIX}.bin
+cp ${ROOTDIR}/build/uboot-imx/flash.bin ${ROOTDIR}/images/u-boot-${REPO_PREFIX}.bin
 
 # Build buildroot
 echo "** Building buildroot **"
