@@ -7,6 +7,7 @@ LINUX_NXP_REL=rel_imx_5.4.47_2.2.0
 UBOOT_NXP_REL=imx_v2020.04_5.4.70_2.3.0
 FW_VERSION=firmware-imx-8.10
 BUILDROOT_VERSION=2020.02
+: ${BR2_PRIMARY_SITE:=} # custom buildroot mirror
 ###
 SHALLOW=${SHALLOW:false}
 if [ "x$SHALLOW" == "xtrue" ]; then
@@ -89,10 +90,7 @@ cp ${ROOTDIR}/build/uboot-imx/flash.bin u-boot-${REPO_PREFIX}.bin
 echo "** Building buildroot **"
 cd $ROOTDIR/build/buildroot
 cp $ROOTDIR/configs/buildroot_defconfig configs/imx8mn_compact_defconfig
-#replace openocd folder
-rm -rf $ROOTDIR/build/buildroot/package/openocd
-mkdir -p $ROOTDIR/build/buildroot/package/openocd
-cp -r $ROOTDIR/packages/openocd/* $ROOTDIR/build/buildroot/package/openocd/
+printf 'BR2_PRIMARY_SITE="%s"\n' "${BR2_PRIMARY_SITE}" >> configs/imx8mn_compact_defconfig
 
 #change input-event-daemon priority to a higher one in order to catch reset event earlier
 rm -rf $ROOTDIR/build/buildroot/package/input-event-daemon
