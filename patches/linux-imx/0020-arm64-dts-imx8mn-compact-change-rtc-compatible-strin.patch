@@ -1,0 +1,31 @@
+From c371e03618d9e770178ee7d0ac3c2affe22f2ae9 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Tue, 12 Apr 2022 17:33:25 +0300
+Subject: [PATCH 20/20] arm64: dts: imx8mn-compact: change rtc compatible
+ string to generic
+
+It was discovered that some chips will pretend to have part number 1805,
+while others claim 1800. Use the generic string to allow matching during
+probe.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 97b63b98b..fc5e49263 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -536,7 +536,7 @@
+         };
+ 
+ 	rtc@69 {
+-		compatible = "abracon,ab1805";
++		compatible = "abracon,abx80x";
+ 		reg = <0x69>;
+ 		abracon,tc-diode = "schottky";
+ 		abracon,tc-resistor = <3>;
+-- 
+2.25.1
+
