@@ -1,0 +1,57 @@
+From 8d5f6f2ab8cf3a62d018341f9f04eaa354221b62 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Tue, 12 Apr 2022 18:44:12 +0300
+Subject: [PATCH] arm64: dts: imx8mn-compact: add sensors
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index fc5e49263..af66e0705 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -251,7 +251,7 @@
+         };
+ 
+ 
+-	pinctrl_i2c2_synaptics_dsx_io: synaptics_dsx_iogrp {
++	pinctrl_i2c3_accel: i2c3grp-accel {
+ 		fsl,pins = <
+ 			MX8MN_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x19
+ 		>;
+@@ -516,10 +516,18 @@
+ 	pinctrl-names = "default", "gpio";
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+ 	pinctrl-1 = <&pinctrl_i2c3_gpio>;
++	pinctrl-2 = <&pinctrl_i2c3_accel>;
+ 	scl-gpios = <&gpio5 18 GPIO_ACTIVE_HIGH>;
+ 	sda-gpios = <&gpio5 19 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
+ 
++	accelerometer@1d {
++		compatible = "adi,adxl345";
++		reg = <0x1d>;
++		interrupt-parent = <&gpio1>; // GPIO1_IO09
++		interrupts = <9 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+         io_expander: gpio-controller@20 {
+ 		/*ignore interrupts - using polling method (gpio-keys-polled)*/
+                 compatible = "ti,tca6408";
+@@ -535,6 +543,11 @@
+ 		//interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
+         };
+ 
++	ambient_light_sensor: isl29023@44 {
++		compatible = "isil,isl29023";
++		reg = <0x44>;
++	};
++
+ 	rtc@69 {
+ 		compatible = "abracon,abx80x";
+ 		reg = <0x69>;
+-- 
+2.25.1
+
