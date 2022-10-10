@@ -1,0 +1,41 @@
+From e488afbfef985a6386a76c1dc7abd425155a1b31 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 11 Oct 2022 00:34:12 +0300
+Subject: [PATCH] Edit imx8mn-compact dts: Add ADIN_PHY support (aphy-ddress=0)
+
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 20f9a67b7ff2..d5cc59fd6b8e 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -561,7 +561,6 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_fec1>;
+ 	phy-mode = "rgmii-id";
+-	phy-handle = <&ethphy4>;
+ 	phy-reset-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
+ 	fsl,magic-packet;
+ 	status = "okay";
+@@ -575,7 +574,15 @@
+ 			reg = <4>;
+ 			at803x,led-act-blind-workaround;
+ 			at803x,eee-disabled;
+-			//at803x,vddio-1p8v;
++			status = "okay";
++		};
++
++		ethphy0: ethernet-phy@0 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <0>;
++			at803x,led-act-blind-workaround;
++			at803x,eee-disabled;
++			status = "okay";
+ 		};
+ 	};
+ };
+-- 
+2.25.1
+
