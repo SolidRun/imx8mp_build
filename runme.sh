@@ -7,6 +7,17 @@ UBOOT_NXP_REL=imx_v2020.04_5.4.70_2.3.0
 #rel_imx_5.4.24_2.1.0
 #imx_v2020.04_5.4.24_2.1.0
 BUILDROOT_VERSION=2020.11.2
+
+#UBOOT_ENVIRONMENT -
+# - spi (SPI FLash)
+# - mmc:0:0 (MMC 1 Partition 0) <-- microSD on HummingBoard Pulse
+# - mmc:0:1 (MMC 1 Partition boot0) <-- invalid on HummingBoard Pulse
+# - mmc:0:2 (MMC 1 Partition boot1) <-- invalid on HummingBoard Pulse
+# - mmc:2:0 (MMC 2 Partition 0) <-- eMMC on HummingBoard Pulse
+# - mmc:2:1 (MMC 2 Partition boot0) <-- eMMC boot0 on HummingBoard Pulse
+# - mmc:2:2 (MMC 2 Partition boot1) <-- eMMC boot1 on HummingBoard Pulse
+: ${UBOOT_ENVIRONMENT:=mmc:1:0} # <-- default microSD on HummingBoard Pulse
+
 ###
 SHALLOW=${SHALLOW:false}
 if [ "x$SHALLOW" == "xtrue" ]; then
@@ -78,6 +89,18 @@ cp build/imx8mp/release/bl31.bin $ROOTDIR/build/imx-mkimage/iMX8M/
 echo "*** Building u-boot"
 cd $ROOTDIR/build/uboot-imx/
 make imx8mp_solidrun_defconfig
+[[ "${UBOOT_ENVIRONMENT}" =~ (.*):(.*):(.*) ]] || [[ "${UBOOT_ENVIRONMENT}" =~ (.*) ]]
+if [ "x${BASH_REMATCH[1]}" = "xmmc" ]; then
+cat >> .config << EOF
+CONFIG_ENV_IS_IN_MMC=y
+CONFIG_SYS_MMC_ENV_DEV=${BASH_REMATCH[2]}
+CONFIG_SYS_MMC_ENV_PART=${BASH_REMATCH[3]}
+CONFIG_ENV_IS_IN_SPI_FLASH=n
+EOF
+else
+	echo "ERROR: \$UBOOT_ENVIRONMENT setting invalid"
+	exit 1
+fi
 make -j 32
 set +e
 cp -v $(find . | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mkimage$/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
@@ -99,7 +122,7 @@ sed "s/\(^dtbs = \).*/\1imx8mp-solidrun.dtb/;s/\(mkimage\)_uboot/\1/" soc.mak > 
 make clean
 make flash_evk SOC=iMX8MP
 mkdir -p $ROOTDIR/images
-cp -v flash.bin $ROOTDIR/images/u-boot-${REPO_PREFIX}.bin
+cp -v flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
 
 # Create disk images
 echo "*** Creating disk images"
