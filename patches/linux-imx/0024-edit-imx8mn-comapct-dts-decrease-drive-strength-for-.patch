@@ -1,0 +1,30 @@
+From defb285e9dd9d9dd8251852e2a2807c6157f8ef2 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 5 Jan 2023 12:34:55 +0200
+Subject: [PATCH 3/3] edit imx8mn-comapct dts - decrease drive strength for
+ Ethernet TX Clock
+
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index d79286190b3d..8375cf17727f 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -143,10 +143,10 @@
+ 			MX8MN_IOMUXC_ENET_RD2_ENET1_RGMII_RD2	0x91
+ 			MX8MN_IOMUXC_ENET_RD1_ENET1_RGMII_RD1	0x191 /*PHY-Address1 */
+ 			MX8MN_IOMUXC_ENET_RD0_ENET1_RGMII_RD0	0x191 /*PHY-Address0 */
+-			MX8MN_IOMUXC_ENET_TXC_ENET1_RGMII_TXC	0x1f
++			MX8MN_IOMUXC_ENET_TXC_ENET1_RGMII_TXC	0x10
+ 			MX8MN_IOMUXC_ENET_RXC_ENET1_RGMII_RXC	0x91
+ 			MX8MN_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91
+-			MX8MN_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL	0x1f
++			MX8MN_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL	0x10
+ 			MX8MN_IOMUXC_SAI5_RXFS_GPIO3_IO19      0x19 /*PHY RESET */
+ 		>;
+ 	};
+-- 
+2.25.1
+
