@@ -1,0 +1,183 @@
+From 3eef12acc2628735afd52a285fed59f7988deed9 Mon Sep 17 00:00:00 2001
+From: Alvaro Karsz <alvaro.karsz@solid-run.com>
+Date: Mon, 12 Jun 2023 14:56:08 +0300
+Subject: [PATCH] Support 4G Micron LPDDR
+
+As a follow up to the "Automatic DDR detection" patch,
+this commit adds support for 4G Micron LPDDR chip.
+
+The support was added to the "Identify DDR" approach (spl_identify_ddr)
+And to the function to calculate the sdram2 size (board_phys_sdram2_size).
+
+Nothing was needed for the generic approach (spl_generic_ddr_init),
+the 4G configuration was detected without any change.
+
+Signed-off-by: Alvaro Karsz <alvaro.karsz@solid-run.com>
+---
+ board/solidrun/imx8mp_solidrun/Makefile       |  2 +-
+ .../imx8mp_solidrun/imx8mp_solidrun.c         | 32 +++++++++++++------
+ ...g.c => lpddr4_timing_4gb_samsung_micron.c} |  2 +-
+ board/solidrun/imx8mp_solidrun/spl.c          | 19 +++++++----
+ 4 files changed, 36 insertions(+), 19 deletions(-)
+ rename board/solidrun/imx8mp_solidrun/{lpddr4_timing_4gb_samsung.c => lpddr4_timing_4gb_samsung_micron.c} (99%)
+
+diff --git a/board/solidrun/imx8mp_solidrun/Makefile b/board/solidrun/imx8mp_solidrun/Makefile
+index 543c61dc..20aa427a 100644
+--- a/board/solidrun/imx8mp_solidrun/Makefile
++++ b/board/solidrun/imx8mp_solidrun/Makefile
+@@ -8,5 +8,5 @@ obj-y += imx8mp_solidrun.o mmc.o
+ 
+ ifdef CONFIG_SPL_BUILD
+ obj-y += spl.o
+-obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_4gb_samsung.o lpddr4_timing_3gb_micron.o lpddr4_timing_2gb_samsung.o lpddr4_timing_1gb_samsung_micron.o
++obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_4gb_samsung_micron.o lpddr4_timing_3gb_micron.o lpddr4_timing_2gb_samsung.o lpddr4_timing_1gb_samsung_micron.o
+ endif
+diff --git a/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c b/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c
+index 5561cc44..b21a7453 100644
+--- a/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c
++++ b/board/solidrun/imx8mp_solidrun/imx8mp_solidrun.c
+@@ -138,28 +138,40 @@ __weak unsigned int lpddr4_mr_read(unsigned int mr_rank, unsigned int mr_addr)
+ int board_phys_sdram2_size(phys_size_t *size)
+ {
+ 	phys_size_t output = 0;
+-	unsigned int mr5;
++	unsigned int mr5, mr8;
+ 	int ret;
+ 
+ 	ret = board_phys_sdram_size(size);
+ 	if (ret)
+ 		return ret;
+ 
+-	/* The only 4G configuration is a Samsung chip.
++	/* 4G configuration are Samsung/Micron.
+ 	 * If SDRAM1 size is 3G, there are 2 options:
+ 	 *
+-	 * (*) A 3G Micron chip.
+-	 * (*) A 4G Samsung chip.
+-	 *
++	 * (*) 3G Micron
++	 * (*) 4G Micron/Samsung
+ 	 */
+ 
+-	if (*size == 3*ONE_GB) {
+-		/* Read LPDDr MR5 register */
+-		mr5 = lpddr4_mr_read(0xF, 0x5);
+-		if (mr5 == LPDDR4_SAMSUNG_MANID)
+-			output = ONE_GB;
++	if (*size != 3*ONE_GB)
++		goto exit;
++
++	/* Read LPDDr MR5 register, if MAN. ID is Samsung, this is a 4G Samsung DDR */
++	mr5 = lpddr4_mr_read(0xF, 0x5);
++	if (mr5 == LPDDR4_SAMSUNG_MANID) {
++		output = ONE_GB;
++		goto exit;
+ 	}
+ 
++	/* At this point, this is either 3G Micron or 4G Micron
++	 * Can be determined based on MR8.
++	 * If MR8 = 0x10, then the density is 16Gb per die (8Gb per channel),
++	 * Since the Micron 4G is dual die, this means 32Gb => 4GB
++	 */
++	mr8 = lpddr4_mr_read(0xF, 0x8);
++	if (mr8 == 0x10)
++		output = ONE_GB;
++
++exit:
+ 	*size = output;
+ 	return 0;
+ }
+diff --git a/board/solidrun/imx8mp_solidrun/lpddr4_timing_4gb_samsung.c b/board/solidrun/imx8mp_solidrun/lpddr4_timing_4gb_samsung_micron.c
+similarity index 99%
+rename from board/solidrun/imx8mp_solidrun/lpddr4_timing_4gb_samsung.c
+rename to board/solidrun/imx8mp_solidrun/lpddr4_timing_4gb_samsung_micron.c
+index ef3f86e7..acef6da4 100644
+--- a/board/solidrun/imx8mp_solidrun/lpddr4_timing_4gb_samsung.c
++++ b/board/solidrun/imx8mp_solidrun/lpddr4_timing_4gb_samsung_micron.c
+@@ -1838,7 +1838,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
+ };
+ 
+ /* ddr timing config params */
+-struct dram_timing_info dram_timing_4gb_samsung = {
++struct dram_timing_info dram_timing_4gb_samsung_micron = {
+ 	.ddrc_cfg = ddr_ddrc_cfg,
+ 	.ddrc_cfg_num = ARRAY_SIZE(ddr_ddrc_cfg),
+ 	.ddrphy_cfg = ddr_ddrphy_cfg,
+diff --git a/board/solidrun/imx8mp_solidrun/spl.c b/board/solidrun/imx8mp_solidrun/spl.c
+index cb78130f..287501c0 100644
+--- a/board/solidrun/imx8mp_solidrun/spl.c
++++ b/board/solidrun/imx8mp_solidrun/spl.c
+@@ -29,7 +29,7 @@
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+-extern struct dram_timing_info dram_timing_4gb_samsung;
++extern struct dram_timing_info dram_timing_4gb_samsung_micron;
+ extern struct dram_timing_info dram_timing_3gb_micron;
+ extern struct dram_timing_info dram_timing_2gb_samsung;
+ extern struct dram_timing_info dram_timing_1gb_samsung_micron;
+@@ -63,7 +63,7 @@ int spl_board_boot_device(enum boot_device boot_dev_spl)
+ #ifdef PRINT_DDR_TABLES
+ static void spl_print_ddr_tables(void)
+ {
+-	struct dram_timing_info *confs[4] = {&dram_timing_4gb_samsung, &dram_timing_3gb_micron,
++	struct dram_timing_info *confs[4] = {&dram_timing_4gb_samsung_micron, &dram_timing_3gb_micron,
+ 					     &dram_timing_2gb_samsung, &dram_timing_1gb_samsung_micron};
+ 	int ret, i;
+ 	unsigned int mr5[4];
+@@ -176,16 +176,16 @@ static bool spl_generic_ddr_init(void)
+ 	/* Try 4G Samsung.
+ 	 * Will work with: 3G Micron as well.
+ 	 */
+-	ret = ddr_init(&dram_timing_4gb_samsung);
++	ret = ddr_init(&dram_timing_4gb_samsung_micron);
+ 	if (!ret) {
+ 		if (!spl_dram_is_3G()) {
+-			printf("DDR 4G Samsung identified!\n");
++			printf("DDR 4G Samsung/Micron identified!\n");
+ 			goto exit;
+ 		}
+ 	}
+ 
+ 	/* Try 3G Micron.
+-	 * Will work with: 4G Samsung, but since we already tested it,
++	 * Will work with: 4G Samsung/Micron, but since we already tested it,
+ 	 * it's not relevant
+ 	 */
+ 	ret = ddr_init(&dram_timing_3gb_micron);
+@@ -245,6 +245,7 @@ static struct dram_timing_info *spl_identify_ddr(bool *needs_training)
+ 	 * Samsung 2G   ************** TRAINING FAILURE ********************
+ 	 * Micron 3G    255		4		1		12
+ 	 * Samsung 4G   1		6		16		16
++	 * Micron 4G    255		7		0		16
+ 	 *
+ 	 *   		      Values for 1G Samsung/Micron training
+ 	 *
+@@ -254,10 +255,11 @@ static struct dram_timing_info *spl_identify_ddr(bool *needs_training)
+ 	 * Samsung 2G   1		6		16		16
+ 	 * Micron 3G    255		4		1		12
+ 	 * Samsung 4G   ****************** UNSTABLE ************************
++	 * Micron 4G    ****************** UNSTABLE ************************
+ 	 *
+ 	 * Algorithm:
+ 	 * DDR training with 3G Micron, if succeeds, check if this is a 3G Micron,
+-	 * 4G Samsung, or unknown.
++	 * 4G Samsung/Micron or unknown.
+ 	 * If fails, DDR training with 1G Samsung/Micron, check if this is a 2G Samsung,
+ 	 * 1G Samsung, 1G Micron or unknown.
+ 	 */
+@@ -283,7 +285,10 @@ static struct dram_timing_info *spl_identify_ddr(bool *needs_training)
+ 			return &dram_timing_3gb_micron;
+ 		} else if (mr5 == 0x1 && mr6 == 0x6 && mr7 == 0x10 && mr8 == 0x10) {
+ 			printf("DDR 4G Samsung identified!\n");
+-			return &dram_timing_4gb_samsung;
++			return &dram_timing_4gb_samsung_micron;
++		} else if (mr5 == 0xFF && mr6 == 0x7 && mr7 == 0x0 && mr8 == 0x10) {
++			printf("DDR 4G Micron identified!\n");
++			return &dram_timing_4gb_samsung_micron;
+ 		} else {
+ 			goto err;
+ 		}
+-- 
+2.34.1
+
