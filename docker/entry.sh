@@ -29,8 +29,8 @@ if [ "x${FLAGS_uid}" != "x0" ]; then
 fi
 
 # preconfigure git identity
-sudo -u $user git config --global user.name "IMX8M Toolchain Container"
-sudo -u $user git config --global user.email "support@solid-run.com"
+GIT_DIR=/dev/null git config --system user.name "i.MX8MP Toolchain Container"
+GIT_DIR=/dev/null git config --system user.email "support@solid-run.com"
 
 cd /work
 # now run the build script as the build user

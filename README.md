@@ -10,13 +10,13 @@ A docker image providing a consistent build environment can be used as below:
 
 1. build container image (first time only)
    ```
-   sudo docker build -t imx8mp_build docker
+   docker build -t imx8mp_build docker
    # optional with an apt proxy, e.g. apt-cacher-ng
    # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t imx8mp_build docker
    ```
 2. invoke build script in working directory
    ```
-   sudo docker run -i -t -v "$PWD":/work imx8mp_build -u $(id -u) -g $(id -g)
+   docker run -i -t -v "$PWD":/work imx8mp_build -u $(id -u) -g $(id -g)
    ```
 
 ### rootless Podman
