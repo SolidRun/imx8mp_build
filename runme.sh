@@ -10,9 +10,10 @@ BUILDROOT_VERSION=2020.11.2
 
 #UBOOT_ENVIRONMENT -
 # - spi (SPI FLash)
-# - mmc:0:0 (MMC 1 Partition 0) <-- microSD on HummingBoard Pulse
-# - mmc:0:1 (MMC 1 Partition boot0) <-- invalid on HummingBoard Pulse
-# - mmc:0:2 (MMC 1 Partition boot1) <-- invalid on HummingBoard Pulse
+# - mmc:0:* (MMC 0) <-- wifi module on i.mx8mp solidrun som
+# - mmc:1:0 (MMC 1 Partition 0) <-- microSD on HummingBoard Pulse
+# - mmc:1:1 (MMC 1 Partition boot0) <-- invalid on HummingBoard Pulse
+# - mmc:1:2 (MMC 1 Partition boot1) <-- invalid on HummingBoard Pulse
 # - mmc:2:0 (MMC 2 Partition 0) <-- eMMC on HummingBoard Pulse
 # - mmc:2:1 (MMC 2 Partition boot0) <-- eMMC boot0 on HummingBoard Pulse
 # - mmc:2:2 (MMC 2 Partition boot1) <-- eMMC boot1 on HummingBoard Pulse
