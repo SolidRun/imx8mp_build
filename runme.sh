@@ -7,7 +7,7 @@ declare -A GIT_REL
 GIT_REL[imx-atf]=lf_v2.6
 GIT_REL[uboot-imx]=lf_v2022.04
 GIT_REL[linux-imx]=lf-5.15.y
-GIT_REL[imx-mkimage]=rel_imx_5.4.24_2.1.0
+GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 
 BUILDROOT_VERSION=2020.11.2
 
@@ -132,12 +132,11 @@ fi
 # Bring bootlader all together
 echo "*** Creating boot loader image"
 unset ARCH CROSS_COMPILE
-cd $ROOTDIR/build/imx-mkimage/iMX8M
-sed "s/\(^dtbs = \).*/\1imx8mp-solidrun.dtb/;s/\(mkimage\)_uboot/\1/" soc.mak > Makefile
+cd $ROOTDIR/build/imx-mkimage
 make clean
-make flash_evk SOC=iMX8MP
+make SOC=iMX8MP dtbs=imx8mp-solidrun.dtb flash_evk
 mkdir -p $ROOTDIR/images
-cp -v flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
+cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
 
 # Create disk images
 echo "*** Creating disk images"
