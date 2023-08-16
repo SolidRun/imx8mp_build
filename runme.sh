@@ -81,6 +81,7 @@ cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-m
 # Build buildroot
 echo "*** Building buildroot"
 cd $ROOTDIR/build/buildroot
+export FORCE_UNSAFE_CONFIGURE=1
 cp $ROOTDIR/configs/buildroot_defconfig configs/imx8mp_hummingboard_pulse_defconfig
 make imx8mp_hummingboard_pulse_defconfig
 make
