@@ -41,7 +41,7 @@ for i in $COMPONENTS; do
 		else
 			CHECKOUT=$NXP_REL
 		fi
-		git clone ${SHALLOW_FLAG} https://source.codeaurora.org/external/imx/$i -b $CHECKOUT
+		git clone ${SHALLOW_FLAG} https://github.com/nxp-imx/$i -b $CHECKOUT
 		cd $i
 		if [[ -d $ROOTDIR/patches/$i/ ]]; then
 			git am $ROOTDIR/patches/$i/*.patch
