@@ -1,0 +1,43 @@
+From a670c89a69c0cb6e2cb504f9381aa20837d04964 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 21 Nov 2023 12:59:36 +0200
+Subject: [PATCH] imx8mn-compact: fix isl29023 light sensor settings
+
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index 8375cf17727f..a92a01bbdfca 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -257,6 +257,12 @@
+ 		>;
+ 	};
+ 
++	pinctrl_isl29023: isl29023grp {
++		fsl,pins = <
++			MX8MN_IOMUXC_GPIO1_IO09_GPIO1_IO9               0x19
++		>;
++       };
++
+ 	pinctrl_pdm: pdmgrp {
+ 		fsl,pins = <
+ 			MX8MN_IOMUXC_SAI5_MCLK_SAI5_MCLK	0xd6
+@@ -544,8 +550,13 @@
+         };
+ 
+ 	ambient_light_sensor: isl29023@44 {
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_isl29023>;
+ 		compatible = "isil,isl29023";
+ 		reg = <0x44>;
++		rext = <499>;
++		interrupt-parent = <&gpio1>; // GPIO1_IO09
++		interrupts = <9 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
+ 	rtc@69 {
+-- 
+2.39.2
+
