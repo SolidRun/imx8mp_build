@@ -1,7 +1,10 @@
 #!/bin/bash
-set -e
+set -o pipefail
+set +x
 
-### General setup
+###############################################################################
+# General configurations
+###############################################################################
 
 declare -A GIT_REL
 GIT_REL[imx-atf]=lf_v2.6
@@ -9,7 +12,23 @@ GIT_REL[uboot-imx]=lf_v2022.04
 GIT_REL[linux-imx]=lf-5.15.y
 GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 
-BUILDROOT_VERSION=2020.11.2
+# Distribution for rootfs
+# - buildroot
+# - debian
+: ${DISTRO:=buildroot}
+
+## Buildroot Options
+: ${BUILDROOT_VERSION:=2020.11.2}
+: ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
+: ${BUILDROOT_ROOTFS_SIZE:=512M}
+## Debian Options
+: ${DEBIAN_VERSION:=bullseye}
+: ${DEBIAN_ROOTFS_SIZE:=936M}
+: ${DEBIAN_PACKAGES:="apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd,systemd-sysv,dbus,tio,usbutils,wget,xterm,xz-utils"}
+: ${HOST_NAME:="imx8mp"}
+## Kernel Options:
+: ${INCLUDE_KERNEL_MODULES:=true}
+: ${LINUX_DEFCONFIG:=imx_v8_defconfig}
 
 #UBOOT_ENVIRONMENT -
 # - spi (SPI FLash)
@@ -22,20 +41,44 @@ BUILDROOT_VERSION=2020.11.2
 # - mmc:2:2 (MMC 2 Partition boot1) <-- eMMC boot1 on HummingBoard Pulse
 : ${UBOOT_ENVIRONMENT:=mmc:1:0} # <-- default microSD on HummingBoard Pulse
 
+ROOTDIR=`pwd`
+
 ###
 SHALLOW=${SHALLOW:false}
 if [ "x$SHALLOW" == "xtrue" ]; then
         SHALLOW_FLAG="--depth 500"
 fi
 
-# Kernel Modules:
-: ${INCLUDE_KERNEL_MODULES:=true}
-
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
+export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
+export CROSS_COMPILE=aarch64-none-elf-
 export ARCH=arm64
-ROOTDIR=`pwd`
+PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
 
+# Check if git is configured
+GIT_CONF=`git config user.name || true`
+if [ "x$GIT_CONF" == "x" ]; then
+	echo "git is not configured! using fake email and username ..."
+	export GIT_AUTHOR_NAME="SolidRun imx8mp_build Script"
+	export GIT_AUTHOR_EMAIL="support@solid-run.com"
+	export GIT_COMMITTER_NAME="${GIT_AUTHOR_NAME}"
+	export GIT_COMMITTER_EMAIL="${GIT_AUTHOR_EMAIL}"
+fi
+
+# Install Toolchain
+if [[ ! -d $ROOTDIR/build/toolchain ]]; then
+	mkdir -p $ROOTDIR/build/toolchain
+	cd $ROOTDIR/build/toolchain
+	wget https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
+	tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
+fi
+
+###############################################################################
+# Source code clonig
+###############################################################################
+
+cd $ROOTDIR
 COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage"
 mkdir -p build
 mkdir -p images/tmp/
@@ -78,17 +121,12 @@ fi
 cd $ROOTDIR/build/firmware
 cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
 
-# Build buildroot
-echo "*** Building buildroot"
-cd $ROOTDIR/build/buildroot
-export FORCE_UNSAFE_CONFIGURE=1
-cp $ROOTDIR/configs/buildroot_defconfig configs/imx8mp_hummingboard_pulse_defconfig
-make imx8mp_hummingboard_pulse_defconfig
-make
-cp $ROOTDIR/build/buildroot/output/images/rootfs.ext2 $ROOTDIR/images/tmp/rootfs.ext4
-ROOTFS_IMG="$ROOTDIR/images/tmp/rootfs.ext4"
-
-export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
+###############################################################################
+# Building Bootloader
+###############################################################################
+echo "================================="
+echo "Building Bootloader"
+echo "================================="
 
 # Build ATF
 echo "*** Building ATF"
@@ -118,20 +156,142 @@ cp -v $(find . | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mk
 cp tools/mkimage ${ROOTDIR}/build//imx-mkimage/iMX8M/mkimage_uboot
 set -e
 
-# Build linux
-echo "*** Building Linux kernel"
+###############################################################################
+# Building Linux
+###############################################################################
+#export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
+echo "================================="
+echo "*** Building Linux kernel..."
+echo "================================="
 cd $ROOTDIR/build/linux-imx
-make imx_v8_defconfig
+make $LINUX_DEFCONFIG
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/kernel.extra
 make -j$(nproc) Image dtbs
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ${ROOTDIR}/images/tmp/Image
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ${ROOTDIR}/images/tmp/
 if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	make -j$(nproc) modules
 	rm -rf ${ROOTDIR}/images/tmp/modules
 	make -j$(nproc) INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 fi
 
+###############################################################################
+# Building FS Buildroot/Debian
+###############################################################################
+
+ROOTFS_IMG="$ROOTDIR/images/tmp/rootfs.ext4"
+
+do_build_buildroot() {
+	echo "================================="
+	echo "*** Building Buildroot FS..."
+	echo "================================="
+	cd $ROOTDIR/build/buildroot
+	export FORCE_UNSAFE_CONFIGURE=1
+	cp $ROOTDIR/configs/${BUILDROOT_DEFCONFIG} $ROOTDIR/build/buildroot/configs
+	make ${BUILDROOT_DEFCONFIG}
+	make savedefconfig BR2_DEFCONFIG="${ROOTDIR}/build/buildroot/defconfig"
+	make -j${PARALLEL}
+	cp $ROOTDIR/build/buildroot/output/images/rootfs.ext2 $ROOTDIR/images/tmp/rootfs.ext4
+	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
+	# Prepare rootfs
+	echo "Preparing rootfs"
+	truncate -s ${BUILDROOT_ROOTFS_SIZE} ${ROOTFS_IMG}
+	e2fsck -f -y ${ROOTFS_IMG}
+	resize2fs ${ROOTFS_IMG}
+	# Preparing initrd
+	mkimage -A arm64 -O linux -T ramdisk -d $ROOTDIR/images/tmp/rootfs.cpio $ROOTDIR/images/tmp/initrd.img
+}
+
+do_build_debian() {
+	echo "================================="
+	echo "*** Building Debian FS..."
+	echo "================================="
+	mkdir -p $ROOTDIR/build/debian
+	cd $ROOTDIR/build/debian
+
+# (re-)generate only if rootfs doesn't exist or runme script has changed
+	if [ ! -f rootfs.e2.orig ] || [[ ${ROOTDIR}/${BASH_SOURCE[0]} -nt rootfs.e2.orig ]]; then
+		rm -f rootfs.e2.orig
+
+		# bootstrap a first-stage rootfs
+		rm -rf stage1
+		fakeroot debootstrap --variant=minbase \
+			--arch=arm64 --components=main,contrib,non-free \
+			--foreign \
+			--include=${DEBIAN_PACKAGES} \
+			${DEBIAN_VERSION} \
+			stage1 \
+			https://deb.debian.org/debian
+
+		# prepare init-script for second stage inside VM
+		cat > stage1/stage2.sh << EOF
+#!/bin/sh
+
+# run second-stage bootstrap
+/debootstrap/debootstrap --second-stage
+
+# set empty root password
+# passwd -d root
+echo "root:root" | chpasswd
+
+#Set hosts
+echo "${HOST_NAME}" | sudo tee /etc/hostname
+echo "127.0.0.1 localhost ${HOST_NAME}" | sudo tee -a /etc/hosts
+
+# delete self
+rm -f /stage2.sh
+
+# flush disk
+sync
+
+# power-off
+reboot -f
+EOF
+		chmod +x stage1/stage2.sh
+
+		# create empty partition image
+		dd if=/dev/zero of=rootfs.e2.orig bs=1 count=0 seek=${DEBIAN_ROOTFS_SIZE}
+
+		# create filesystem from first stage
+		mkfs.ext2 -L rootfs -E root_owner=0:0 -d stage1 rootfs.e2.orig
+
+		# bootstrap second stage within qemu
+		qemu-system-aarch64 \
+			-m 1G \
+			-M virt \
+			-cpu cortex-a57 \
+			-smp 4 \
+			-netdev user,id=eth0 \
+			-device virtio-net-device,netdev=eth0 \
+			-drive file=rootfs.e2.orig,if=none,format=raw,id=hd0 \
+			-device virtio-blk-device,drive=hd0 \
+			-nographic \
+			-no-reboot \
+			-kernel "${ROOTDIR}/images/tmp/Image" \
+			-append "console=ttyAMA0 root=/dev/vda rootfstype=ext2 ip=dhcp rw init=/stage2.sh" \
+
+		:
+
+		# convert to ext4
+		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
+	fi;
+
+	# export final rootfs for next steps
+	cp rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
+
+	# apply overlay (configuration + data files only - can't "chmod +x")
+	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
+}
+
+# BUILD selected Distro buildroot/debian
+do_build_${DISTRO}
+
+###############################################################################
 # Bring bootlader all together
+###############################################################################
+echo "================================="
 echo "*** Creating boot loader image"
+echo "================================="
 unset ARCH CROSS_COMPILE
 cd $ROOTDIR/build/imx-mkimage
 make clean
@@ -139,26 +299,38 @@ make SOC=iMX8MP dtbs=imx8mp-solidrun.dtb flash_evk
 mkdir -p $ROOTDIR/images
 cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
 
+###############################################################################
+# Assembling Boot Image
+###############################################################################
+echo "================================="
+echo "Assembling Boot Image"
+echo "================================="
+
 # Create disk images
 echo "*** Creating disk images"
 cd $ROOTDIR/images
 dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 
-# Prepare rootfs
-echo "Preparing rootfs"
-truncate -s 512M ${ROOTFS_IMG}
-e2fsck -f -y ${ROOTFS_IMG}
-resize2fs ${ROOTFS_IMG}
-
 if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
+
+	# Prepare rootfs
+	echo "Preparing rootfs"
+	KERNEL_MODULES_SIZE_KB=$(du -s "${ROOTDIR}/images/tmp/modules/" | cut -f1)
+	KERNEL_MODULES_SIZE_MB=$(echo "$KERNEL_MODULES_SIZE_KB / 1024 + 1" | bc)
+	ROOTFS_SIZE=`stat -c "%s" tmp/rootfs.ext4`
+	ROOTFS_SIZE_MB=$(($ROOTFS_SIZE / (1024 * 1024) ))
+	TOTAL_ROOTFS_SIZE_MB=$((ROOTFS_SIZE_MB + KERNEL_MODULES_SIZE_MB))
+	truncate -s ${TOTAL_ROOTFS_SIZE_MB}M ${ROOTFS_IMG}
+	#e2fsck -f -y ${ROOTFS_IMG}
+	resize2fs ${ROOTFS_IMG}
+
 	echo "copying kernel modules ..."
 	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "$ROOTFS_IMG:lib/modules" -a
 	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "$ROOTFS_IMG:lib/modules" -a
 fi
 
-e2fsck -f -y ${ROOTFS_IMG}
-
+# e2fsck -f -y ${ROOTFS_IMG}
 IMG=microsd-${REPO_PREFIX}.img
 
 IMAGE_BOOTPART_SIZE_MB=150 # bootpart size = 150MiB
@@ -179,7 +351,9 @@ mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
 mmd -i tmp/part1.fat32 ::/freescale
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ::/freescale
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
+if [ "x$DISTRO" == "xbuildroot" ]; then
+       mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
+fi
 
 dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
