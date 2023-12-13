@@ -1,6 +1,6 @@
 #!/bin/bash
 set -o pipefail
-set +x
+set -x
 
 ###############################################################################
 # General configurations
@@ -322,7 +322,9 @@ if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	ROOTFS_SIZE_MB=$(($ROOTFS_SIZE / (1024 * 1024) ))
 	TOTAL_ROOTFS_SIZE_MB=$((ROOTFS_SIZE_MB + KERNEL_MODULES_SIZE_MB))
 	truncate -s ${TOTAL_ROOTFS_SIZE_MB}M ${ROOTFS_IMG}
-	#e2fsck -f -y ${ROOTFS_IMG}
+	set +e
+	e2fsck -f -y ${ROOTFS_IMG}
+	set -e
 	resize2fs ${ROOTFS_IMG}
 
 	echo "copying kernel modules ..."
