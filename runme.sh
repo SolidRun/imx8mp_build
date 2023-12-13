@@ -356,7 +356,7 @@ if [ "x$DISTRO" == "xbuildroot" ]; then
 fi
 
 dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
-env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
-dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 8MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
+dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=8 conv=notrunc
 dd if=${ROOTFS_IMG} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
 echo -e "\n\n*** Image is ready - images/${IMG}"
