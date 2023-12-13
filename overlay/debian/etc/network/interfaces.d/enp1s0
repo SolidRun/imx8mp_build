@@ -1,0 +1,3 @@
+allow-hotplug enp1s0
+iface enp1s0 inet dhcp
+iface enp1s0 inet6 auto

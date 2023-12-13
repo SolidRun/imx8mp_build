@@ -2,4 +2,3 @@ build/
 images/
 *.swp
 .vscode-ctags
-/overlay/**
