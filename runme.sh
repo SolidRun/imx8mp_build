@@ -18,7 +18,7 @@ GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 : ${DISTRO:=buildroot}
 
 ## Buildroot Options
-: ${BUILDROOT_VERSION:=2020.11.2}
+: ${BUILDROOT_VERSION:=2023.11}
 : ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
 : ${BUILDROOT_ROOTFS_SIZE:=512M}
 ## Debian Options
@@ -333,7 +333,7 @@ if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 fi
 
 # e2fsck -f -y ${ROOTFS_IMG}
-IMG=microsd-${REPO_PREFIX}.img
+IMG=imx8mp-sdhc-${DISTRO}-${REPO_PREFIX}.img
 
 IMAGE_BOOTPART_SIZE_MB=150 # bootpart size = 150MiB
 IMAGE_BOOTPART_SIZE=$((IMAGE_BOOTPART_SIZE_MB*1024*1024)) # Convert megabytes to bytes 
