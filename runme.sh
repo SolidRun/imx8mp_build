@@ -188,16 +188,12 @@ do_build_buildroot() {
 	cd $ROOTDIR/build/buildroot
 	export FORCE_UNSAFE_CONFIGURE=1
 	cp $ROOTDIR/configs/${BUILDROOT_DEFCONFIG} $ROOTDIR/build/buildroot/configs
+	echo BR2_TARGET_ROOTFS_EXT2_SIZE=\"${BUILDROOT_ROOTFS_SIZE}\" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
 	make ${BUILDROOT_DEFCONFIG}
 	make savedefconfig BR2_DEFCONFIG="${ROOTDIR}/build/buildroot/defconfig"
 	make -j${PARALLEL}
 	cp $ROOTDIR/build/buildroot/output/images/rootfs.ext2 $ROOTDIR/images/tmp/rootfs.ext4
 	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
-	# Prepare rootfs
-	echo "Preparing rootfs"
-	truncate -s ${BUILDROOT_ROOTFS_SIZE} ${ROOTFS_IMG}
-	e2fsck -f -y ${ROOTFS_IMG}
-	resize2fs ${ROOTFS_IMG}
 	# Preparing initrd
 	mkimage -A arm64 -O linux -T ramdisk -d $ROOTDIR/images/tmp/rootfs.cpio $ROOTDIR/images/tmp/initrd.img
 }
@@ -314,18 +310,20 @@ env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 
 if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 
-	# Prepare rootfs
-	echo "Preparing rootfs"
-	KERNEL_MODULES_SIZE_KB=$(du -s "${ROOTDIR}/images/tmp/modules/" | cut -f1)
-	KERNEL_MODULES_SIZE_MB=$(echo "$KERNEL_MODULES_SIZE_KB / 1024 + 1" | bc)
-	ROOTFS_SIZE=`stat -c "%s" tmp/rootfs.ext4`
-	ROOTFS_SIZE_MB=$(($ROOTFS_SIZE / (1024 * 1024) ))
-	TOTAL_ROOTFS_SIZE_MB=$((ROOTFS_SIZE_MB + KERNEL_MODULES_SIZE_MB))
-	truncate -s ${TOTAL_ROOTFS_SIZE_MB}M ${ROOTFS_IMG}
-	set +e
-	e2fsck -f -y ${ROOTFS_IMG}
-	set -e
-	resize2fs ${ROOTFS_IMG}
+	if [ "x$DISTRO" != "xbuildroot" ]; then
+		# Prepare rootfs
+		echo "Preparing rootfs"
+		KERNEL_MODULES_SIZE_KB=$(du -s "${ROOTDIR}/images/tmp/modules/" | cut -f1)
+		KERNEL_MODULES_SIZE_MB=$(echo "$KERNEL_MODULES_SIZE_KB / 1024 + 1" | bc)
+		ROOTFS_SIZE=`stat -c "%s" tmp/rootfs.ext4`
+		ROOTFS_SIZE_MB=$(($ROOTFS_SIZE / (1024 * 1024) ))
+		TOTAL_ROOTFS_SIZE_MB=$((ROOTFS_SIZE_MB + KERNEL_MODULES_SIZE_MB))
+		truncate -s ${TOTAL_ROOTFS_SIZE_MB}M ${ROOTFS_IMG}
+		set +e
+		e2fsck -f -y ${ROOTFS_IMG}
+		set -e
+		resize2fs ${ROOTFS_IMG}
+	fi
 
 	echo "copying kernel modules ..."
 	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "$ROOTFS_IMG:lib/modules" -a
