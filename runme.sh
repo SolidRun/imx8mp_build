@@ -1,6 +1,5 @@
 #!/bin/bash
-set -o pipefail
-set -x
+set -e
 
 ###############################################################################
 # General configurations
@@ -25,7 +24,7 @@ GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 : ${DEBIAN_VERSION:=bullseye}
 : ${DEBIAN_ROOTFS_SIZE:=936M}
 : ${DEBIAN_PACKAGES:="apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd,systemd-sysv,dbus,tio,usbutils,wget,xterm,xz-utils"}
-: ${HOST_NAME:="imx8mp"}
+: ${HOST_NAME:=imx8mp}
 ## Kernel Options:
 : ${INCLUDE_KERNEL_MODULES:=true}
 : ${LINUX_DEFCONFIG:=imx_v8_defconfig}
@@ -44,7 +43,7 @@ GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 ROOTDIR=`pwd`
 
 ###
-SHALLOW=${SHALLOW:false}
+: ${SHALLOW:=true}
 if [ "x$SHALLOW" == "xtrue" ]; then
         SHALLOW_FLAG="--depth 500"
 fi
