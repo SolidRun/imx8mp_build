@@ -187,7 +187,7 @@ do_build_buildroot() {
 	cd $ROOTDIR/build/buildroot
 	export FORCE_UNSAFE_CONFIGURE=1
 	cp $ROOTDIR/configs/${BUILDROOT_DEFCONFIG} $ROOTDIR/build/buildroot/configs
-	echo BR2_TARGET_ROOTFS_EXT2_SIZE=\"${BUILDROOT_ROOTFS_SIZE}\" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
+	echo -e "\nBR2_TARGET_ROOTFS_EXT2_SIZE=\"${BUILDROOT_ROOTFS_SIZE}\"" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
 	make ${BUILDROOT_DEFCONFIG}
 	make savedefconfig BR2_DEFCONFIG="${ROOTDIR}/build/buildroot/defconfig"
 	make -j${PARALLEL}
