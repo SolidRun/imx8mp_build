@@ -281,6 +281,26 @@ EOF
 # BUILD selected Distro buildroot/debian
 do_build_${DISTRO}
 
+do_generate_extlinux() {
+	local EXTLINUX=$1
+	local DISKIMAGE=$2
+	local PARTNUMBER=$3
+	local PARTUUID=`blkid -s PTUUID -o value ${DISKIMAGE}`
+	PARTUUID=${PARTUUID}'-0'${PARTNUMBER} # specific partition uuid
+
+	mkdir -p $(dirname ${EXTLINUX})
+	cat > ${EXTLINUX} << EOF
+TIMEOUT 1
+DEFAULT default
+MENU TITLE SolidRun i.MX8MP Reference BSP
+LABEL default
+	MENU LABEL default
+	LINUX ../Image
+	FDTDIR ../
+	APPEND console=\${console} root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
+EOF
+}
+
 ###############################################################################
 # Bring bootlader all together
 ###############################################################################
@@ -339,11 +359,9 @@ IMAGE_ROOTPART_SIZE_MB=$(($IMAGE_ROOTPART_SIZE / (1024 * 1024) )) # Convert byte
 IMAGE_SIZE=$((IMAGE_BOOTPART_SIZE+IMAGE_ROOTPART_SIZE+2*1024*1024))  # additional 2M at the end
 IMAGE_SIZE_MB=$(echo "$IMAGE_SIZE / (1024 * 1024)" | bc) # Convert bytes to megabytes
 dd if=/dev/zero of=${IMG} bs=1M count=${IMAGE_SIZE_MB}
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 8MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
 
-echo 'label linux' > $ROOTDIR/images/extlinux.conf
-echo '        KERNEL ../Image' >> $ROOTDIR/images/extlinux.conf
-echo '        FDTDIR ../' >> $ROOTDIR/images/extlinux.conf
-echo '        APPEND ${bootargs} root=${mmcroot} rootwait rw console=${console}' >> $ROOTDIR/images/extlinux.conf
+do_generate_extlinux ${ROOTDIR}/images/extlinux.conf ${IMG} 2
 
 mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
@@ -355,7 +373,6 @@ if [ "x$DISTRO" == "xbuildroot" ]; then
 fi
 
 dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
-env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 8MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=8 conv=notrunc
 dd if=${ROOTFS_IMG} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
 echo -e "\n\n*** Image is ready - images/${IMG}"
