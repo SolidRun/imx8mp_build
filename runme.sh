@@ -48,7 +48,7 @@ if [ "x$SHALLOW" == "xtrue" ]; then
         SHALLOW_FLAG="--depth 500"
 fi
 
-REPO_PREFIX=`git log -1 --pretty=format:%h`
+REPO_PREFIX=`git log -1 --pretty=format:%h || echo "unknown"`
 
 export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
 export CROSS_COMPILE=aarch64-none-elf-
@@ -137,6 +137,7 @@ cp build/imx8mp/release/bl31.bin $ROOTDIR/build/imx-mkimage/iMX8M/
 echo "*** Building u-boot"
 cd $ROOTDIR/build/uboot-imx/
 make imx8mp_solidrun_defconfig
+# make menuconfig
 [[ "${UBOOT_ENVIRONMENT}" =~ (.*):(.*):(.*) ]] || [[ "${UBOOT_ENVIRONMENT}" =~ (.*) ]]
 if [ "x${BASH_REMATCH[1]}" = "xmmc" ]; then
 cat >> .config << EOF
@@ -165,6 +166,7 @@ echo "================================="
 cd $ROOTDIR/build/linux-imx
 make $LINUX_DEFCONFIG
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/kernel.extra
+# make menuconfig
 make -j$(nproc) Image dtbs
 cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ${ROOTDIR}/images/tmp/Image
 cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ${ROOTDIR}/images/tmp/
