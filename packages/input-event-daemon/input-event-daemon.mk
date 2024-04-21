@@ -23,8 +23,8 @@ define INPUT_EVENT_DAEMON_INSTALL_TARGET_CMDS
 endef
 
 define INPUT_EVENT_DAEMON_INSTALL_INIT_SYSV
-	$(INSTALL) -m 0755 -D package/input-event-daemon/S03input-event-daemon \
-		$(TARGET_DIR)/etc/init.d/S03input-event-daemon
+	$(INSTALL) -m 0755 -D package/input-event-daemon/S13input-event-daemon \
+		$(TARGET_DIR)/etc/init.d/S13input-event-daemon
 endef
 
 define INPUT_EVENT_DAEMON_INSTALL_INIT_SYSTEMD

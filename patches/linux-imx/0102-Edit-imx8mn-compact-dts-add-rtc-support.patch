@@ -1,0 +1,30 @@
+From 6806c8681028081361f44f775aa016e22ab73a08 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 22 Mar 2021 17:19:40 +0200
+Subject: [PATCH 102/124] Edit imx8mn compact dts: add rtc support
+
+---
+ arch/arm64/boot/dts/freescale/imx8mn-compact.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+index f7d291a76e18..50dcf4f64cc4 100755
+--- a/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-compact.dts
+@@ -455,6 +455,13 @@ pca6416: gpio@20 {
+ 		#gpio-cells = <2>;
+ 	};
+ 
++	rtc@69 {
++		compatible = "abracon,ab1805";
++		reg = <0x69>;
++		abracon,tc-diode = "schottky";
++		abracon,tc-resistor = <3>;
++	};
++
+ };
+ 
+ &fec1 {
+-- 
+2.35.3
+
