@@ -114,7 +114,7 @@ fi
 
 # Copy firmware
 cd $ROOTDIR/build/firmware
-cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
+cp -v $(find . | awk '/ddr4_.mem|lpddr4_.*train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
 
 ###############################################################################
 # Building Bootloader
@@ -147,8 +147,6 @@ else
 	exit 1
 fi
 make -j$(nproc)
-cp -v $ROOTDIR/build/firmware/firmware-imx-8.10/firmware/ddr/synopsys/ddr4*.bin ./
-make -j$(nproc) BL31=$ROOTDIR/build/imx-atf/build/imx8mn/release/bl31.bin ATF_LOAD_ADDR=0x960000 flash.bin
 set +e
 cp -v $(find . | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mkimage$/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
 cp tools/mkimage ${ROOTDIR}/build//imx-mkimage/iMX8M/mkimage_uboot
@@ -315,10 +313,9 @@ echo "================================="
 unset ARCH CROSS_COMPILE
 cd $ROOTDIR/build/imx-mkimage
 make clean
-make SOC=iMX8MN dtbs=imx8mn-compact.dtb flash_evk
+make SOC=iMX8MN dtbs=imx8mn-compact.dtb BL31=$ROOTDIR/build/imx-atf/build/imx8mn/release/bl31.bin flash_ddr4_val
 mkdir -p $ROOTDIR/images
-#cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
-cp -v $ROOTDIR/build/uboot-imx/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
+cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
 
 ###############################################################################
 # Assembling Boot Image
@@ -378,8 +375,7 @@ if [ "x$DISTRO" == "xbuildroot" ]; then
        mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
 fi
 
-#dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
-dd if=$ROOTDIR/build/uboot-imx/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
+dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=8 conv=notrunc
 dd if=${ROOTFS_IMG} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
 echo -e "\n\n*** Image is ready - images/${IMG}"
