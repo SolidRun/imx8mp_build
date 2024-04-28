@@ -134,6 +134,7 @@ echo "*** Building u-boot"
 cd $ROOTDIR/build/uboot-imx/
 make imx8mn_solidrun_defconfig
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/uboot.extra
+# make menuconfig
 [[ "${UBOOT_ENVIRONMENT}" =~ (.*):(.*):(.*) ]] || [[ "${UBOOT_ENVIRONMENT}" =~ (.*) ]]
 if [ "x${BASH_REMATCH[1]}" = "xmmc" ]; then
 cat >> .config << EOF
@@ -162,6 +163,7 @@ echo "================================="
 cd $ROOTDIR/build/linux-imx
 make $LINUX_DEFCONFIG
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/kernel.extra
+# make menuconfig
 make -j$(nproc) Image dtbs
 cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ${ROOTDIR}/images/tmp/Image
 cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mn*.dtb ${ROOTDIR}/images/tmp/
