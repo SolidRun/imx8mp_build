@@ -191,6 +191,7 @@ do_build_buildroot() {
 	cp $ROOTDIR/configs/${BUILDROOT_DEFCONFIG} $ROOTDIR/build/buildroot/configs
 	echo -e "\nBR2_TARGET_ROOTFS_EXT2_SIZE=\"${BUILDROOT_ROOTFS_SIZE}\"" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
 	make ${BUILDROOT_DEFCONFIG}
+	# make menuconfig
 	make savedefconfig BR2_DEFCONFIG="${ROOTDIR}/build/buildroot/defconfig"
 	make -j${PARALLEL}
 	cp $ROOTDIR/build/buildroot/output/images/rootfs.ext2 $ROOTDIR/images/tmp/rootfs.ext4
@@ -274,7 +275,7 @@ EOF
 	fi;
 
 	# export final rootfs for next steps
-	cp rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
+	cp --sparse=always rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
 	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
@@ -354,14 +355,16 @@ fi
 # e2fsck -f -y ${ROOTFS_IMG}
 IMG=imx8mp-sdhc-${DISTRO}-${REPO_PREFIX}.img
 
-IMAGE_BOOTPART_SIZE_MB=150 # bootpart size = 150MiB
-IMAGE_BOOTPART_SIZE=$((IMAGE_BOOTPART_SIZE_MB*1024*1024)) # Convert megabytes to bytes 
+# note: partition start and end sectors are inclusive, add/subtract 1 where appropriate
+IMAGE_BOOTPART_START=$((8*1024*1024)) # partition start aligned to 8MiB
+IMAGE_BOOTPART_SIZE=$((150*1024*1024)) # bootpart size = 150MiB
+IMAGE_BOOTPART_END=$((IMAGE_BOOTPART_START+IMAGE_BOOTPART_SIZE-1))
+IMAGE_ROOTPART_START=$((IMAGE_BOOTPART_END+1))
 IMAGE_ROOTPART_SIZE=`stat -c "%s" tmp/rootfs.ext4`
-IMAGE_ROOTPART_SIZE_MB=$(($IMAGE_ROOTPART_SIZE / (1024 * 1024) )) # Convert bytes to megabytes
-IMAGE_SIZE=$((IMAGE_BOOTPART_SIZE+IMAGE_ROOTPART_SIZE+2*1024*1024))  # additional 2M at the end
-IMAGE_SIZE_MB=$(echo "$IMAGE_SIZE / (1024 * 1024)" | bc) # Convert bytes to megabytes
-dd if=/dev/zero of=${IMG} bs=1M count=${IMAGE_SIZE_MB}
-env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 8MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
+IMAGE_ROOTPART_END=$((IMAGE_ROOTPART_START+IMAGE_ROOTPART_SIZE-1))
+IMAGE_SIZE=$((IMAGE_ROOTPART_END+1))
+truncate -s ${IMAGE_SIZE} ${IMG}
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary ${IMAGE_BOOTPART_START}B ${IMAGE_BOOTPART_END}B mkpart primary ${IMAGE_ROOTPART_START}B ${IMAGE_ROOTPART_END}B
 
 do_generate_extlinux ${ROOTDIR}/images/extlinux.conf ${IMG} 2
 
@@ -375,6 +378,7 @@ if [ "x$DISTRO" == "xbuildroot" ]; then
 fi
 
 dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
-dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=8 conv=notrunc
-dd if=${ROOTFS_IMG} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
+dd if=tmp/part1.fat32 of=${IMG} seek=$((IMAGE_BOOTPART_START/512)) conv=notrunc,sparse
+dd if=${ROOTFS_IMG} of=${IMG} seek=$((IMAGE_ROOTPART_START/512)) conv=notrunc,sparse
+dd if=${ROOTFS_IMG} of=${IMG} seek=$((IMAGE_ROOTPART_START/512)) conv=notrunc,sparse
 echo -e "\n\n*** Image is ready - images/${IMG}"
