@@ -17,7 +17,7 @@ GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 : ${DISTRO:=buildroot}
 
 ## Buildroot Options
-: ${BUILDROOT_VERSION:=2023.11}
+: ${BUILDROOT_VERSION:=2023.11.3}
 : ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
 : ${BUILDROOT_ROOTFS_SIZE:=512M}
 ## Debian Options
