@@ -1,0 +1,49 @@
+From 78407a634ee122d7db5c447e84b461235f8204ad Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Wed, 10 Jul 2024 16:09:51 +0200
+Subject: [PATCH] package/openocd: add config variable for imx_gpio driver
+
+imx_gpio driver is used on NXP i.MX family of SoCs and required e.g. for
+programming noridc microcontrollers on SolidRun SolidSense family of
+devices.
+
+Add new config variable BR2_PACKAGE_OPENOCD_IMXGPIO for imx_gpio driver.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ package/openocd/Config.in  | 6 ++++++
+ package/openocd/openocd.mk | 1 +
+ 2 files changed, 7 insertions(+)
+
+diff --git a/package/openocd/Config.in b/package/openocd/Config.in
+index cef109b511..b2398f32da 100644
+--- a/package/openocd/Config.in
++++ b/package/openocd/Config.in
+@@ -200,6 +200,12 @@ config BR2_PACKAGE_OPENOCD_BCM2835
+ 	  Enable building support for bitbanging on BCM2835
+ 	  (as found in Raspberry Pi)
+ 
++config BR2_PACKAGE_OPENOCD_IMXGPIO
++	bool "Enable support for bitbanging on NXP i.MX family"
++	help
++	  Enable support for bitbanging on NXP i.MX family
++	  (as found in SolidSense N6, N8, etc.)
++
+ endif # BR2_arm || BR2_aarch64
+ 
+ config BR2_PACKAGE_OPENOCD_GW16012
+diff --git a/package/openocd/openocd.mk b/package/openocd/openocd.mk
+index 78c6e10c58..3594f2987b 100644
+--- a/package/openocd/openocd.mk
++++ b/package/openocd/openocd.mk
+@@ -84,6 +84,7 @@ OPENOCD_CONF_OPTS += \
+ 	$(if $(BR2_PACKAGE_OPENOCD_AT91RM),--enable-at91rm9200,--disable-at91rm9200) \
+ 	$(if $(BR2_PACKAGE_OPENOCD_BCM2835),--enable-bcm2835gpio,--disable-bcm2835gpio) \
+ 	$(if $(BR2_PACKAGE_OPENOCD_GW16012),--enable-gw16012,--disable-gw16012) \
++	$(if $(BR2_PACKAGE_OPENOCD_IMXGPIO),--enable-imx_gpio,--disable-imx_gpio) \
+ 	$(if $(BR2_PACKAGE_OPENOCD_PRESTO),--enable-presto,--disable-presto) \
+ 	$(if $(BR2_PACKAGE_OPENOCD_OPENJTAG),--enable-openjtag,--disable-openjtag) \
+ 	$(if $(BR2_PACKAGE_OPENOCD_BUSPIRATE),--enable-buspirate,--disable-buspirate) \
+-- 
+2.35.3
+

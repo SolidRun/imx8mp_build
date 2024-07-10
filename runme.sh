@@ -110,6 +110,11 @@ fi
 if [[ ! -d $ROOTDIR/build/buildroot ]]; then
 	cd $ROOTDIR/build
 	git clone ${SHALLOW_FLAG} https://github.com/buildroot/buildroot -b $BUILDROOT_VERSION
+
+	if [[ -d $ROOTDIR/patches/buildroot ]]; then
+		cd cd $ROOTDIR/build/buildroot
+		git am $ROOTDIR/patches/buildroot/*.patch
+	fi
 fi
 
 # Copy firmware
