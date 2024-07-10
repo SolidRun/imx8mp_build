@@ -112,7 +112,7 @@ if [[ ! -d $ROOTDIR/build/buildroot ]]; then
 	git clone ${SHALLOW_FLAG} https://github.com/buildroot/buildroot -b $BUILDROOT_VERSION
 
 	if [[ -d $ROOTDIR/patches/buildroot ]]; then
-		cd cd $ROOTDIR/build/buildroot
+		cd $ROOTDIR/build/buildroot
 		git am $ROOTDIR/patches/buildroot/*.patch
 	fi
 fi
@@ -189,11 +189,6 @@ do_build_buildroot() {
 	echo "*** Building Buildroot FS..."
 	echo "================================="
 	cd $ROOTDIR/build/buildroot
-
-	#change input-event-daemon priority to a higher one in order to catch reset event earlier
-	rm -rf $ROOTDIR/build/buildroot/package/input-event-daemon
-	mkdir -p $ROOTDIR/build/buildroot/package/input-event-daemon
-	cp -r $ROOTDIR/packages/input-event-daemon/* $ROOTDIR/build/buildroot/package/input-event-daemon/
 
 	export FORCE_UNSAFE_CONFIGURE=1
 	cp $ROOTDIR/configs/${BUILDROOT_DEFCONFIG} $ROOTDIR/build/buildroot/configs

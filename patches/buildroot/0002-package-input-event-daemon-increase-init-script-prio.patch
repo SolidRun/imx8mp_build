@@ -1,0 +1,40 @@
+From 6c0b0d91d56583548b8c38f4b6f3074acb15ed78 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Wed, 10 Jul 2024 16:31:10 +0200
+Subject: [PATCH] package/input-event-daemon: increase init script priority
+
+Increase init script priority from 99 to 13 to ensure it starts as early
+as possible.
+
+SolidSense N8 currently uses this daemon for monitoring a
+super-capacitor and trigger emergency shutdown.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ .../{S99input-event-daemon => S13input-event-daemon}          | 0
+ package/input-event-daemon/input-event-daemon.mk              | 4 ++--
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ rename package/input-event-daemon/{S99input-event-daemon => S13input-event-daemon} (100%)
+
+diff --git a/package/input-event-daemon/S99input-event-daemon b/package/input-event-daemon/S13input-event-daemon
+similarity index 100%
+rename from package/input-event-daemon/S99input-event-daemon
+rename to package/input-event-daemon/S13input-event-daemon
+diff --git a/package/input-event-daemon/input-event-daemon.mk b/package/input-event-daemon/input-event-daemon.mk
+index 37fe2241d0..9a90e9ada7 100644
+--- a/package/input-event-daemon/input-event-daemon.mk
++++ b/package/input-event-daemon/input-event-daemon.mk
+@@ -23,8 +23,8 @@ define INPUT_EVENT_DAEMON_INSTALL_TARGET_CMDS
+ endef
+ 
+ define INPUT_EVENT_DAEMON_INSTALL_INIT_SYSV
+-	$(INSTALL) -m 0755 -D package/input-event-daemon/S99input-event-daemon \
+-		$(TARGET_DIR)/etc/init.d/S99input-event-daemon
++	$(INSTALL) -m 0755 -D package/input-event-daemon/S13input-event-daemon \
++		$(TARGET_DIR)/etc/init.d/S13input-event-daemon
+ endef
+ 
+ define INPUT_EVENT_DAEMON_INSTALL_INIT_SYSTEMD
+-- 
+2.35.3
+
