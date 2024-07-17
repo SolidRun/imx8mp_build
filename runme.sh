@@ -31,6 +31,17 @@ GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
 ## Kernel Options:
 : ${INCLUDE_KERNEL_MODULES:=true}
 : ${LINUX_DEFCONFIG:=imx_v8_defconfig}
+# optee-os secure storage on emmc rpmb
+# requires protected hardware-unique-key implemetation:
+# - tee_otp_get_hw_unique_key
+# Implemented by optee-os imx caam driver.
+: ${OPTEE_STORAGE_PRIVATE_RPMB:=true}
+# optee-os secure storage with insecure real-world fs
+# requires monotonic counter implementation to be secure:
+# - nv_counter_get_ree_fs
+# - nv_counter_incr_ree_fs_to
+# Not implemented.
+: ${OPTEE_STORAGE_PRIVATE_REE:=false}
 
 #UBOOT_ENVIRONMENT -
 # - spi (SPI FLash)
@@ -149,13 +160,49 @@ do_build_opteeos() {
 
 	# build optee os
 	cd $ROOTDIR/build/imx-optee-os/
+
+	# REE_FS OPTIONS:
+	# - CFG_RPMB_FS:
+	#   Enable or disable RPMB Filesystem Feature.
+	# - CFG_RPMB_WRITE_KEY:
+	#   Disabled by default to avoid accidental programming of key,
+	#   enable if optee-os shall use rpmb for secure storage.
+	#   Only required during first use.
+	if [ "x$OPTEE_STORAGE_PRIVATE_REE" = "xtrue" ]; then
+		REE_FS="CFG_REE_FS=y"
+	else
+		REE_FS="CFG_REE_FS=n"
+	fi
+
+	# RPMB_FS OPTIONS:
+	# - CFG_RPMB_FS:
+	#   Enable or disable RPMB Filesystem Feature.
+	# - CFG_RPMB_FS_DEV_ID:
+	#   Set MMC device ID of eMMC.
+	# - CFG_RPMB_WRITE_KEY:
+	#   Disabled by default to avoid accidental programming of key,
+	#   enable if optee-os shall use rpmb for secure storage.
+	#   Only required during first use.
+	if [ "x$OPTEE_STORAGE_PRIVATE_RPMB" = "xtrue" ]; then
+		RPMB_FS="CFG_RPMB_FS=y CFG_RPMB_FS_DEV_ID=2 CFG_RPMB_WRITE_KEY=n"
+	else
+		RPMB_FS="CFG_RPMB_FS=n"
+	fi
+
+	# In-Tree Early TA's
+	# - avb: for optee_rpmb u-boot command
+	IN_TREE_EARLY_TAS="avb/023f8f1a-292a-432b-8fc4-de8471358067"
+
 	make -j${JOBS} \
 		ARCH=arm \
 		PLATFORM=$PLATFORM \
 		CROSS_COMPILE64=${CROSS_COMPILE} \
 		CROSS_COMPILE32=${CROSS_COMPILE} \
 		CFG_ARM64_core=y \
-		CFG_TEE_CORE_LOG_LEVEL=$TEE_CORE_LOG_LEVEL
+		CFG_TEE_CORE_LOG_LEVEL=$TEE_CORE_LOG_LEVEL \
+		$REE_FS \
+		$RPMB_FS \
+		CFG_IN_TREE_EARLY_TAS="$IN_TREE_EARLY_TAS"
 
 	cp out/arm-plat-imx/core/tee-pager_v2.bin $ROOTDIR/images/tmp/optee
 }
