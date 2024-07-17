@@ -1,0 +1,23 @@
+From d3e693a3ff2ec198bb89ff2d5fc64eafc82102d8 Mon Sep 17 00:00:00 2001
+From: Maxim Uvarov <maxim.uvarov@linaro.org>
+Date: Fri, 19 Nov 2021 09:57:58 +0300
+Subject: [PATCH 2/2] update submodule: external/wolfssl
+
+Issue with __fallthrough__ declaration was already
+fixed in wolfssl. So just update wolfssl to the latest master.
+
+Signed-off-by: Maxim Uvarov <maxim.uvarov@linaro.org>
+---
+ external/wolfssl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/external/wolfssl b/external/wolfssl
+index 74ebf51..7e81372 160000
+--- a/external/wolfssl
++++ b/external/wolfssl
+@@ -1 +1 @@
+-Subproject commit 74ebf510a3d73e98767eac26082eabdc84e19d31
++Subproject commit 7e813721310f6fefb3c295a4771ccdaf1e96bc7a
+-- 
+2.35.3
+

@@ -92,15 +92,25 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
 	if [[ ! -d $ROOTDIR/build/$i ]]; then
 		cd $ROOTDIR/build/
 
-		CHECKOUT=${GIT_REL["$i"]}
-		git clone ${SHALLOW_FLAG} https://github.com/nxp-imx/$i -b $CHECKOUT
+		case $i in
+			ftpm)
+				CHECKOUT=master
+				CLONE="https://github.com/Microsoft/MSRSec.git ftpm"
+			;;
+			*)
+				CHECKOUT=${GIT_REL["$i"]}
+				CLONE="https://github.com/nxp-imx/$i"
+			;;
+		esac
+
+		git clone ${SHALLOW_FLAG} ${CLONE} -b $CHECKOUT
 		cd $i
 		if [[ -d $ROOTDIR/patches/$i/ ]]; then
 			git am $ROOTDIR/patches/$i/*.patch
@@ -137,6 +147,22 @@ cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-m
 ###############################################################################
 # Building OPTEE
 ###############################################################################
+build_optee_ftpm() {
+	local DEVKIT="$1"
+	local CROSS_COMPILE=$2
+	local TEE_TA_LOG_LEVEL=2
+
+	cd $ROOTDIR/build/ftpm/TAs/optee_ta
+	make -j1 \
+		CFG_FTPM_USE_WOLF=y \
+		TA_CPU=cortex-a53 \
+		TA_CROSS_COMPILE=$CROSS_COMPILE \
+		TA_DEV_KIT_DIR="$DEVKIT" \
+		CFG_TEE_TA_LOG_LEVEL=$TEE_TA_LOG_LEVEL \
+		ftpm
+
+	cp -v out/*/*.ta $ROOTDIR/images/tmp/optee/
+}
 
 do_build_opteeos() {
 	local PLATFORM=imx-mx8mpevk
@@ -156,7 +182,8 @@ do_build_opteeos() {
 		CFG_ARM64_core=y \
 		ta_dev_kit
 
-	# TODO: build external TAs
+	# build external TAs
+	build_optee_ftpm $ROOTDIR/build/imx-optee-os/out/arm-plat-imx/export-ta_arm64 ${CROSS_COMPILE}
 
 	# build optee os
 	cd $ROOTDIR/build/imx-optee-os/
@@ -193,6 +220,10 @@ do_build_opteeos() {
 	# - avb: for optee_rpmb u-boot command
 	IN_TREE_EARLY_TAS="avb/023f8f1a-292a-432b-8fc4-de8471358067"
 
+	# External Early TA's
+	# - fTPM
+	EXTERNAL_EARLY_TAS="$ROOTDIR/build/ftpm/TAs/optee_ta/out/fTPM/bc50d971-d4c9-42c4-82cb-343fb7f37896.stripped.elf"
+
 	make -j${JOBS} \
 		ARCH=arm \
 		PLATFORM=$PLATFORM \
@@ -202,7 +233,9 @@ do_build_opteeos() {
 		CFG_TEE_CORE_LOG_LEVEL=$TEE_CORE_LOG_LEVEL \
 		$REE_FS \
 		$RPMB_FS \
-		CFG_IN_TREE_EARLY_TAS="$IN_TREE_EARLY_TAS"
+		CFG_IN_TREE_EARLY_TAS="$IN_TREE_EARLY_TAS" \
+		CFG_EARLY_TA=y \
+		EARLY_TA_PATHS="$EXTERNAL_EARLY_TAS"
 
 	cp out/arm-plat-imx/core/tee-pager_v2.bin $ROOTDIR/images/tmp/optee
 }
