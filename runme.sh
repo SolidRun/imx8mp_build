@@ -10,6 +10,7 @@ GIT_REL[imx-atf]=lf_v2.6
 GIT_REL[uboot-imx]=lf_v2022.04
 GIT_REL[linux-imx]=lf-5.15.y
 GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
+GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
 
 # Distribution for rootfs
 # - buildroot
@@ -80,7 +81,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -123,6 +124,46 @@ cd $ROOTDIR/build/firmware
 cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
 
 ###############################################################################
+# Building OPTEE
+###############################################################################
+
+do_build_opteeos() {
+	local PLATFORM=imx-mx8mpevk
+	local TEE_CORE_LOG_LEVEL=2
+
+	rm -rf $ROOTDIR/images/tmp/optee
+	mkdir -p $ROOTDIR/images/tmp/optee
+
+	# build optee devkit
+	cd $ROOTDIR/build/imx-optee-os/
+	rm -rf out
+	make -j${JOBS} \
+		ARCH=arm \
+		PLATFORM=${PLATFORM} \
+		CROSS_COMPILE64=${CROSS_COMPILE} \
+		CROSS_COMPILE32=${CROSS_COMPILE} \
+		CFG_ARM64_core=y \
+		ta_dev_kit
+
+	# TODO: build external TAs
+
+	# build optee os
+	cd $ROOTDIR/build/imx-optee-os/
+	make -j${JOBS} \
+		ARCH=arm \
+		PLATFORM=$PLATFORM \
+		CROSS_COMPILE64=${CROSS_COMPILE} \
+		CROSS_COMPILE32=${CROSS_COMPILE} \
+		CFG_ARM64_core=y \
+		CFG_TEE_CORE_LOG_LEVEL=$TEE_CORE_LOG_LEVEL
+
+	cp out/arm-plat-imx/core/tee-pager_v2.bin $ROOTDIR/images/tmp/optee
+}
+
+echo "Building optee-os"
+do_build_opteeos
+
+###############################################################################
 # Building Bootloader
 ###############################################################################
 echo "================================="
@@ -132,7 +173,8 @@ echo "================================="
 # Build ATF
 echo "*** Building ATF"
 cd $ROOTDIR/build/imx-atf
-make -j$(nproc) PLAT=imx8mp bl31
+rm -rf build
+make -j$(nproc) PLAT=imx8mp SPD=opteed bl31
 cp build/imx8mp/release/bl31.bin $ROOTDIR/build/imx-mkimage/iMX8M/
 
 # Build u-boot
@@ -315,7 +357,7 @@ echo "================================="
 unset ARCH CROSS_COMPILE
 cd $ROOTDIR/build/imx-mkimage
 make clean
-make SOC=iMX8MP dtbs=imx8mp-solidrun.dtb flash_evk
+make SOC=iMX8MP dtbs=imx8mp-solidrun.dtb TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
 mkdir -p $ROOTDIR/images
 cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
 
