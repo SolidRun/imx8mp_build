@@ -11,6 +11,7 @@ GIT_REL[uboot-imx]=lf_v2022.04
 GIT_REL[linux-imx]=lf-5.15.y
 GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
+GIT_REL[mfgtools]=uuu_1.4.77
 
 # Distribution for rootfs
 # - buildroot
@@ -19,6 +20,7 @@ GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
 
 ## Buildroot Options
 : ${BUILDROOT_VERSION:=2023.11.3}
+GIT_REL[buildroot]=${BUILDROOT_VERSION}
 : ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
 : ${BUILDROOT_ROOTFS_SIZE:=512M}
 ## Debian Options
@@ -58,9 +60,6 @@ ROOTDIR=`pwd`
 
 ###
 : ${SHALLOW:=true}
-if [ "x$SHALLOW" == "xtrue" ]; then
-        SHALLOW_FLAG="--depth 500"
-fi
 
 REPO_PREFIX=`git log -1 --pretty=format:%h || echo "unknown"`
 
@@ -92,40 +91,39 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools buildroot"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
 	if [[ ! -d $ROOTDIR/build/$i ]]; then
 		cd $ROOTDIR/build/
 
+		if [ "x$SHALLOW" == "xtrue" ]; then
+			SHALLOW_FLAG="--depth 500"
+		fi
+
+		CHECKOUT=${GIT_REL["$i"]}
 		case $i in
 			ftpm)
 				CHECKOUT=master
 				CLONE="https://github.com/Microsoft/MSRSec.git ftpm"
 			;;
+			buildroot)
+				CLONE="https://github.com/buildroot/buildroot"
+			;;
 			*)
-				CHECKOUT=${GIT_REL["$i"]}
 				CLONE="https://github.com/nxp-imx/$i"
 			;;
 		esac
 
 		git clone ${SHALLOW_FLAG} ${CLONE} -b $CHECKOUT
 		cd $i
+
 		if [[ -d $ROOTDIR/patches/$i/ ]]; then
 			git am $ROOTDIR/patches/$i/*.patch
 		fi
 	fi
 done
-
-if [[ ! -d $ROOTDIR/build/mfgtools ]]; then
-	cd $ROOTDIR/build
-	git clone https://github.com/NXPmicro/mfgtools.git -b uuu_1.4.77
-	cd mfgtools
-	git am ../../patches/mfgtools/*.patch
-	cmake .
-	make
-fi
 
 if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cd $ROOTDIR/build/
@@ -133,11 +131,6 @@ if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cd firmware
 	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-8.10.bin
 	bash firmware-imx-8.10.bin --auto-accept
-fi
-
-if [[ ! -d $ROOTDIR/build/buildroot ]]; then
-	cd $ROOTDIR/build
-	git clone ${SHALLOW_FLAG} https://github.com/buildroot/buildroot -b $BUILDROOT_VERSION
 fi
 
 # Copy firmware
