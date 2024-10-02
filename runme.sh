@@ -103,9 +103,12 @@ for i in $COMPONENTS; do
 		fi
 
 		CHECKOUT=${GIT_REL["$i"]}
+		COMMIT=
 		case $i in
 			ftpm)
 				CHECKOUT=master
+				COMMIT=81abeb9fa968340438b4b0c08aa6685833f0bfa1
+				SHALLOW_FLAG=
 				CLONE="https://github.com/Microsoft/MSRSec.git ftpm"
 			;;
 			buildroot)
@@ -118,6 +121,10 @@ for i in $COMPONENTS; do
 
 		git clone ${SHALLOW_FLAG} ${CLONE} -b $CHECKOUT
 		cd $i
+
+		if [ -n "${COMMIT}" ]; then
+			git reset --hard ${COMMIT}
+		fi
 
 		if [[ -d $ROOTDIR/patches/$i/ ]]; then
 			git am $ROOTDIR/patches/$i/*.patch
