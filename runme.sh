@@ -63,7 +63,12 @@ ROOTDIR=`pwd`
 
 REPO_PREFIX=`git log -1 --pretty=format:%h || echo "unknown"`
 
-export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
+CPU_ARCH=$(uname -m)
+if [ "x$CPU_ARCH" == "xaarch64" ]; then
+	export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-aarch64-aarch64-none-elf/bin:$PATH
+else
+	export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
+fi
 export CROSS_COMPILE=aarch64-none-elf-
 export ARCH=arm64
 PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
@@ -82,8 +87,13 @@ fi
 if [[ ! -d $ROOTDIR/build/toolchain ]]; then
 	mkdir -p $ROOTDIR/build/toolchain
 	cd $ROOTDIR/build/toolchain
-	wget https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
-	tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
+	if [ "x$CPU_ARCH" == "xaarch64" ]; then
+		wget https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-aarch64-aarch64-none-elf.tar.xz
+		tar -xvf gcc-arm-11.2-2022.02-aarch64-aarch64-none-elf.tar.xz
+	else
+		wget https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
+		tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
+	fi
 fi
 
 ###############################################################################
