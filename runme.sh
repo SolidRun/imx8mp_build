@@ -370,6 +370,9 @@ echo "root:root" | chpasswd
 echo "${HOST_NAME}" | sudo tee /etc/hostname
 echo "127.0.0.1 localhost ${HOST_NAME}" | sudo tee -a /etc/hosts
 
+# install AWS Greengrass
+apt -y install default-jdk
+
 # delete self
 rm -f /stage2.sh
 
