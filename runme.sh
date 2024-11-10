@@ -292,13 +292,30 @@ make $LINUX_DEFCONFIG
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/kernel.extra
 # make menuconfig
 make -j$(nproc) Image dtbs
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ${ROOTDIR}/images/tmp/Image
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ${ROOTDIR}/images/tmp/
+rm -rf ${ROOTDIR}/images/tmp/linux
+mkdir -p ${ROOTDIR}/images/tmp/linux/boot/freescale
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ${ROOTDIR}/images/tmp/linux/boot/Image
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ${ROOTDIR}/images/tmp/linux/boot/freescale/
+cp -v System.map ${ROOTDIR}/images/tmp/linux/boot/
+cp -v .config ${ROOTDIR}/images/tmp/linux/boot/config
 if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	make -j$(nproc) modules
-	rm -rf ${ROOTDIR}/images/tmp/modules
-	make -j$(nproc) INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
+	make -j$(nproc) INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/linux/usr" modules_install
 fi
+KRELEASE=`make kernelrelease`
+cd ${ROOTDIR}/images/tmp/linux; tar --owner=root --group=root -cpf ${ROOTDIR}/images/linux-${REPO_PREFIX}.tar *
+
+# Build external Linux Headers package for compiling modules
+cd $ROOTDIR/build/linux-imx
+rm -rf ${ROOTDIR}/images/tmp/linux-headers
+mkdir -p ${ROOTDIR}/images/tmp/linux-headers
+tempfile=$(mktemp)
+find . -name Makefile\* -o -name Kconfig\* -o -name \*.pl > $tempfile
+find arch/arm64/include .config Module.symvers include scripts -type f >> $tempfile
+tar -c -f - -T $tempfile | tar -C ${ROOTDIR}/images/tmp/linux-headers -xf -
+rm -f $tempfile
+unset tempfile
+cd ${ROOTDIR}/images/tmp/linux-headers; tar --owner=root --group=root -cpf ${ROOTDIR}/images/linux-headers-${REPO_PREFIX}.tar *
 
 ###############################################################################
 # Building FS Buildroot/Debian
@@ -389,7 +406,7 @@ EOF
 			-device virtio-blk-device,drive=hd0 \
 			-nographic \
 			-no-reboot \
-			-kernel "${ROOTDIR}/images/tmp/Image" \
+			-kernel "${ROOTDIR}/images/tmp/linux/boot/Image" \
 			-append "console=ttyAMA0 root=/dev/vda rootfstype=ext2 ip=dhcp rw init=/stage2.sh" \
 
 		:
@@ -459,7 +476,7 @@ if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	if [ "x$DISTRO" != "xbuildroot" ]; then
 		# Prepare rootfs
 		echo "Preparing rootfs"
-		KERNEL_MODULES_SIZE_KB=$(du -s "${ROOTDIR}/images/tmp/modules/" | cut -f1)
+		KERNEL_MODULES_SIZE_KB=$(du -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules/" | cut -f1)
 		KERNEL_MODULES_SIZE_MB=$(echo "$KERNEL_MODULES_SIZE_KB / 1024 + 1" | bc)
 		ROOTFS_SIZE=`stat -c "%s" tmp/rootfs.ext4`
 		ROOTFS_SIZE_MB=$(($ROOTFS_SIZE / (1024 * 1024) ))
@@ -472,8 +489,8 @@ if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	fi
 
 	echo "copying kernel modules ..."
-	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "$ROOTFS_IMG:lib/modules" -a
-	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "$ROOTFS_IMG:lib/modules" -a
+	find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "$ROOTFS_IMG:usr/lib/modules" -a
+	find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "$ROOTFS_IMG:usr/lib/modules" -a
 fi
 
 # e2fsck -f -y ${ROOTFS_IMG}
@@ -494,9 +511,9 @@ do_generate_extlinux ${ROOTDIR}/images/extlinux.conf ${IMG} 2
 
 mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
-mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/Image ::/Image
 mmd -i tmp/part1.fat32 ::/freescale
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ::/freescale
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb ::/freescale
 if [ "x$DISTRO" == "xbuildroot" ]; then
        mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
 fi
