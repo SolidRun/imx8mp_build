@@ -78,3 +78,19 @@ And then set the HummingBoard Pulse DIP switch to boot from SD
 ### Login
 - **username:** root
 - **password:** root
+
+== Legal notice and licensing
+All of the end products of this project (toolchain, root filesystem, kernel,
+bootloaders) can contain both open source software and proprietary binaries,
+released under various licenses.
+
+Using open source software gives you the freedom to build rich embedded
+systems, choosing from a wide range of packages, but also imposes some
+obligations that you must know and honour.
+Some licenses require you to publish the license text in the documentation of
+your product. Others require you to redistribute the source code of the
+software to those that receive your product.
+
+The exact requirements of each license are documented in each repository that
+is downloaded, and it is your responsibility (or that of your legal office)
+to comply with those requirements.
