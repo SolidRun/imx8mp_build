@@ -6,10 +6,11 @@ set -e
 ###############################################################################
 
 declare -A GIT_REL
-GIT_REL[imx-atf]=rel_imx_5.4.70_2.3.0
-GIT_REL[uboot-imx]=imx_v2020.04_5.4.70_2.3.0
+GIT_REL[imx-atf]=lf-6.6.36-2.1.0
+GIT_REL[uboot-imx]=lf-6.6.36-2.1.0
 GIT_REL[linux-imx]=lf-5.15.y
-GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
+GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
+PKG_VER[firmware-imx]=8.26-d4c33ab
 
 # Distribution for rootfs
 # - buildroot
@@ -29,12 +30,11 @@ GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 : ${INCLUDE_KERNEL_MODULES:=true}
 : ${LINUX_DEFCONFIG:=imx_v8_defconfig}
 
-#UBOOT_ENVIRONMENT -
-# - mmc:1:0 (MMC 1 Partition 0) <-- microSD on SolidSense N8 Compact
-# - mmc:2:0 (MMC 2 Partition 0) <-- eMMC on SolidSense N8 Compact
-# - mmc:2:1 (MMC 2 Partition boot0) <-- eMMC boot0 on SolidSense N8 Compact
-# - mmc:2:2 (MMC 2 Partition boot1) <-- eMMC boot1 on SolidSense N8 Compact
-: ${UBOOT_ENVIRONMENT:=mmc:1:0} # <-- default microSD on SolidSense N8 Compact
+# Boot Source
+# - mmc-data (SD/eMMC Partition 0)
+# - mmc-boot0 (eMMC Partition boot0)
+# - mmc-boot1 (eMMC Partition boot1)
+: ${BOOTSOURCE:=mmc-data}
 
 ROOTDIR=`pwd`
 
@@ -103,8 +103,8 @@ if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cd $ROOTDIR/build/
 	mkdir -p firmware
 	cd firmware
-	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-8.10.bin
-	bash firmware-imx-8.10.bin --auto-accept
+	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-${PKG_VER["firmware-imx"]}.bin
+	bash firmware-imx-${PKG_VER["firmware-imx"]}.bin --auto-accept
 fi
 
 if [[ ! -d $ROOTDIR/build/buildroot ]]; then
@@ -137,22 +137,35 @@ cp build/imx8mn/release/bl31.bin $ROOTDIR/build/imx-mkimage/iMX8M/
 # Build u-boot
 echo "*** Building u-boot"
 cd $ROOTDIR/build/uboot-imx/
-make imx8mn_solidrun_defconfig
+make solidsense-n8_defconfig
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/uboot.extra
 # make menuconfig
-[[ "${UBOOT_ENVIRONMENT}" =~ (.*):(.*):(.*) ]] || [[ "${UBOOT_ENVIRONMENT}" =~ (.*) ]]
-if [ "x${BASH_REMATCH[1]}" = "xmmc" ]; then
+if [ "x${BOOTSOURCE}" = "xmmc-data" ];  then
+# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
-CONFIG_SYS_MMC_ENV_DEV=${BASH_REMATCH[2]}
-CONFIG_SYS_MMC_ENV_PART=${BASH_REMATCH[3]}
-CONFIG_ENV_IS_IN_SPI_FLASH=n
+CONFIG_SYS_MMC_ENV_PART=0
+CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x300
 EOF
-else
-	echo "ERROR: \$UBOOT_ENVIRONMENT setting invalid"
-	exit 1
+fi
+if [ "x${BOOTSOURCE}" = "xmmc-boot0" ];  then
+# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
+cat >> .config << EOF
+CONFIG_ENV_IS_IN_MMC=y
+CONFIG_SYS_MMC_ENV_PART=1
+CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
+EOF
+fi
+if [ "x${BOOTSOURCE}" = "xmmc-boot1" ];  then
+# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
+cat >> .config << EOF
+CONFIG_ENV_IS_IN_MMC=y
+CONFIG_SYS_MMC_ENV_PART=2
+CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
+EOF
 fi
 make -j$(nproc)
+make savedefconfig
 set +e
 cp -v $(find . | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mkimage$/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
 cp tools/mkimage ${ROOTDIR}/build//imx-mkimage/iMX8M/mkimage_uboot
@@ -161,7 +174,7 @@ set -e
 ###############################################################################
 # Building Linux
 ###############################################################################
-#export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
+export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
@@ -209,7 +222,7 @@ do_build_debian() {
 	mkdir -p $ROOTDIR/build/debian
 	cd $ROOTDIR/build/debian
 
-# (re-)generate only if rootfs doesn't exist or runme script has changed
+	# (re-)generate only if rootfs doesn't exist or runme script has changed
 	if [ ! -f rootfs.e2.orig ] || [[ ${ROOTDIR}/${BASH_SOURCE[0]} -nt rootfs.e2.orig ]]; then
 		rm -f rootfs.e2.orig
 
@@ -274,7 +287,10 @@ EOF
 
 		# convert to ext4
 		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
-	fi;
+
+		# fix filesystem errors
+		e2fsck -f -y rootfs.e2.orig
+	fi
 
 	# export final rootfs for next steps
 	cp rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
@@ -315,9 +331,9 @@ echo "================================="
 unset ARCH CROSS_COMPILE
 cd $ROOTDIR/build/imx-mkimage
 make clean
-make SOC=iMX8MN dtbs=imx8mn-compact.dtb BL31=$ROOTDIR/build/imx-atf/build/imx8mn/release/bl31.bin flash_ddr4_val
+make SOC=iMX8MN dtbs=imx8mn-solidsense-n8-compact.dtb BL31=$ROOTDIR/build/imx-atf/build/imx8mn/release/bl31.bin flash_ddr4_val
 mkdir -p $ROOTDIR/images
-cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
+cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
 
 ###############################################################################
 # Assembling Boot Image
@@ -355,7 +371,13 @@ if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 fi
 
 # e2fsck -f -y ${ROOTFS_IMG}
-IMG=imx8mn-sdhc-${DISTRO}-${REPO_PREFIX}.img
+
+# use different filenames for OS-only and combined images
+if [ "x${BOOTSOURCE}" = "xmmc-data" ]; then
+	IMG=${DISTRO}-bootimg-${REPO_PREFIX}.img
+else
+	IMG=${DISTRO}-rootimg-${REPO_PREFIX}.img
+fi
 
 IMAGE_BOOTPART_SIZE_MB=150 # bootpart size = 150MiB
 IMAGE_BOOTPART_SIZE=$((IMAGE_BOOTPART_SIZE_MB*1024*1024)) # Convert megabytes to bytes 
@@ -377,7 +399,13 @@ if [ "x$DISTRO" == "xbuildroot" ]; then
        mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
 fi
 
-dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
+# copy boot and rootfs partitions to image
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=8 conv=notrunc
 dd if=${ROOTFS_IMG} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
-echo -e "\n\n*** Image is ready - images/${IMG}"
+
+# generate combined image with os + bootloader
+if [ "x${BOOTSOURCE}" = "xmmc-data" ]; then
+	dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
+fi
+
+echo -e "\n\n*** Images are ready:\n- images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin\n- images/${IMG}"
