@@ -13,9 +13,6 @@ The build script provides ready to use **Debian/Buildroot** images that can be d
 
 The build script supports several customisation options that can be applied through environment variables:
 
-- INCLUDE_KERNEL_MODULES: include kernel modules in rootfs
-   - true (default)
-   - false
 - `BOOTSOURCE`: Select bootloader media
   - `mmc-data` (SD/eMMC Data Partition, default)
   - `mmc-boot0` (eMMC Partition boot0)
@@ -29,11 +26,11 @@ The build script supports several customisation options that can be applied thro
   - `buildroot_defconfig` (default)
 - `BUILDROOT_ROOTFS_SIZE`: Specify rootfs size
   - `512M` (default)
-- BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
-- DEBIAN_VERSION
-  - bullseye (default)
-- DEBIAN_ROOTFS_SIZE
-  - 936M (default)
+- `BR2_PRIMARY_SITE`: Use specific (local) buildroot mirror
+- `DEBIAN_VERSION`
+  - `bullseye` (default)
+- `DEBIAN_ROOTFS_SIZE`
+  - `936M` (default)
 
 #### Example
    generating buildroot image

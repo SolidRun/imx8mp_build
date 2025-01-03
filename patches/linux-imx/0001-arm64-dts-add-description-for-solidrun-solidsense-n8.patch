@@ -1,43 +1,33 @@
-From b3d0271b630ffb6c5d8f33dac51d046fa20181be Mon Sep 17 00:00:00 2001
+From 2eba895d4403300ef17d1fa7964f69b847aa19b8 Mon Sep 17 00:00:00 2001
 From: Josua Mayer <josua@solid-run.com>
-Date: Tue, 16 Apr 2024 08:27:20 +0000
-Subject: [PATCH 103/103] arm64: dts: add description for solidrun solidsense
- n8 compact
-
-Add description for the SolidRun SolidSense N8 Compact Gateway.
-Based on i.MX8M Nano it features:
-- 1Gbps Ethernet with PoE
-- USB-2.0
-- CAN-FD
-- RS485
-- 4G Cellular Modem
-- programmable IEEE 802.15.1 radio
-- eMMC
-- microSD
-- backup supercapacitor to allow graceful shutdown after power loss
+Date: Fri, 3 Jan 2025 14:01:38 +0100
+Subject: [PATCH] arm64: dts: add description for solidrun solidsense-n8 board
 
 Signed-off-by: Josua Mayer <josua@solid-run.com>
 ---
  arch/arm64/boot/dts/freescale/Makefile        |   1 +
- .../imx8mn-solidsense-n8-compact.dts          | 797 ++++++++++++++++++
- 2 files changed, 798 insertions(+)
+ .../imx8mn-solidsense-n8-compact.dts          | 837 ++++++++++++++++++
+ 2 files changed, 838 insertions(+)
  create mode 100644 arch/arm64/boot/dts/freescale/imx8mn-solidsense-n8-compact.dts
 
 diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
-index 421faf67edc9..4afbad82747a 100644
+index efe32533733e..f03e430b0f1f 100644
 --- a/arch/arm64/boot/dts/freescale/Makefile
 +++ b/arch/arm64/boot/dts/freescale/Makefile
-@@ -243,3 +243,4 @@ dtb-$(CONFIG_ARCH_MXC) += imx93-9x9-qsb.dtb \
- 			  imx93-9x9-qsb-mt9m114.dtb
- dtb-$(CONFIG_ARCH_S32) += s32v234-evb.dtb \
- 			  s32v234-sbc.dtb
+@@ -120,6 +120,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mn-ddr3l-evk-ak5558.dtb imx8mn-ddr4-evk-ak5558.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mn-ab2.dtb imx8mn-ddr3l-ab2.dtb imx8mn-ddr4-ab2.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mn-evk-iqaudio-dacplus.dtb imx8mn-evk-iqaudio-dacpro.dtb imx8mn-evk-hifiberry-dacplus.dtb \
+ 			  imx8mn-evk-hifiberry-dac2.dtb
 +dtb-$(CONFIG_ARCH_MXC) += imx8mn-solidsense-n8-compact.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-evk.dtb imx8mp-evk-rm67191.dtb imx8mp-evk-it6263-lvds-dual-channel.dtb \
+ 			  imx8mp-evk-pcie-ep.dtb  imx8mp-evk-rpmsg.dtb imx8mp-evk-ecspi-slave.dtb \
+ 			  imx8mp-evk-jdi-wuxga-lvds-panel.dtb imx8mp-evk-flexcan2.dtb \
 diff --git a/arch/arm64/boot/dts/freescale/imx8mn-solidsense-n8-compact.dts b/arch/arm64/boot/dts/freescale/imx8mn-solidsense-n8-compact.dts
 new file mode 100644
-index 000000000000..f8ee48a9bffa
+index 000000000000..49c2c75dc285
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/imx8mn-solidsense-n8-compact.dts
-@@ -0,0 +1,797 @@
+@@ -0,0 +1,837 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +//
 +// Device Tree file for SolidSense N8 Compact
@@ -67,15 +57,24 @@ index 000000000000..f8ee48a9bffa
 +		stdout-path = &uart2;
 +	};
 +
-+	/*poll IO Expander and reboot in case of power loss*/
 +	gpio-keys {
-+		compatible = "gpio-keys";
++		/* use polling to not lose events */
++		compatible = "gpio-keys-polled";
 +		autorepeat;
++		poll-interval = <500>;
 +
 +		key-power-fail {
 +			label = "Power Fail";
 +			linux,code = <KEY_RESTART>;
 +			gpios = <&expander 1 GPIO_ACTIVE_LOW>;
++			debounce-interval = <100>;
++			linux,can-disable;
++		};
++
++		key-low-charge {
++			label = "Low Charge";
++			linux,code = <BTN_MISC>;
++			gpios = <&expander 2 GPIO_ACTIVE_LOW>;
 +			debounce-interval = <100>;
 +			linux,can-disable;
 +		};
@@ -89,24 +88,36 @@ index 000000000000..f8ee48a9bffa
 +
 +		/* D20 */
 +		led1 {
-+			lable = "led1";
-+		        gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-+		        default-state = "off";
++			label = "led1";
++			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
 +		};
 +
 +		/* D18 */
 +		led2 {
-+			lable = "led2";
-+		        gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-+		        default-state = "off";
++			label = "led2";
++			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
 +		};
 +
 +		/* D19 */
 +		led3 {
-+			lable = "led3";
-+		        gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-+		        default-state = "off";
++			label = "led3";
++			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
 +		};
++	};
++
++	reg_modem_vbat: regulator-modem-vbat {
++		compatible = "regulator-fixed";
++		regulator-name = "modem-vbat";
++		pinctrl-names = "default";
++		pinctrl-0 = <&regulator_modem_vbat_pins>;
++		regulator-min-microvolt = <3800000>;
++		regulator-max-microvolt = <3800000>;
++		gpio = <&gpio3 25 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		regulator-always-on;
 +	};
 +
 +	/* power to lte modems behind hub ports 2/3 */
@@ -159,6 +170,15 @@ index 000000000000..f8ee48a9bffa
 +		gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +		off-on-delay-us = <250>;
++	};
++
++	rfkill {
++		compatible = "rfkill-gpio";
++		label = "rfkill-wwan";
++		radio-type = "wwan";
++		pinctrl-names = "default";
++		pinctrl-0 = <&modem_pins>;
++		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 +	};
 +
 +	usdhc1_pwrseq: usdhc1-pwrseq {
@@ -460,7 +480,7 @@ index 000000000000..f8ee48a9bffa
 +
 +&iomuxc {
 +	pinctr-names = "default";
-+	pinctrl-0 = <&modem_pins>, <&tamper_pins>, <&usb_hub_pins>;
++	pinctrl-0 = <&tamper_pins>, <&usb_hub_pins>;
 +
 +	ieee802151_radio_pins: ieee802151-radio-pins {
 +		fsl,pins = <
@@ -570,16 +590,22 @@ index 000000000000..f8ee48a9bffa
 +
 +	modem_pins: modem-pins {
 +		fsl,pins = <
-+			/* RESET_N */
++			/* RESET_N: modem-internal pull-down */
 +			MX8MN_IOMUXC_GPIO1_IO07_GPIO1_IO7	0x0
-+			/* PWRKEY */
-+			MX8MN_IOMUXC_GPIO1_IO08_GPIO1_IO8	0x0
++			/* PWRKEY: pull-down ensures always-on */
++			MX8MN_IOMUXC_GPIO1_IO08_GPIO1_IO8	0x100
 +		>;
 +	};
 +
 +	pmic_pins: pmic-pins {
 +		fsl,pins = <
 +			MX8MN_IOMUXC_GPIO1_IO03_GPIO1_IO3	0x140
++		>;
++	};
++
++	regulator_modem_vbat_pins: regulator-modem-vbat-pins {
++		fsl,pins = <
++			MX8MN_IOMUXC_SAI5_MCLK_GPIO3_IO25	0x0
 +		>;
 +	};
 +
@@ -749,6 +775,9 @@ index 000000000000..f8ee48a9bffa
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&uart1_pins>;
 +	uart-has-rtscts;
++	/* select 80MHz parent clock to support maximum baudrate 4Mbps */
++	assigned-clocks = <&clk IMX8MN_CLK_UART1>;
++	assigned-clock-parents = <&clk IMX8MN_SYS_PLL1_80M>;
 +	status = "okay";
 +
 +	bluetooth {
@@ -756,6 +785,7 @@ index 000000000000..f8ee48a9bffa
 +		device-wakeup-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
 +		host-wakeup-gpios = <&gpio2 8 GPIO_ACTIVE_HIGH>;
 +		shutdown-gpios = <&gpio2 6 GPIO_ACTIVE_HIGH>;
++		max-speed = <3000000>;
 +	};
 +};
 +
@@ -836,5 +866,5 @@ index 000000000000..f8ee48a9bffa
 +	status = "okay";
 +};
 -- 
-2.35.3
+2.43.0
 
