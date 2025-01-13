@@ -1,7 +1,7 @@
-From 9b6770a6a220d4b146440d60446480159e4856fe Mon Sep 17 00:00:00 2001
+From 5d22bfbd7c424ae0cb25568e264c1c8dc0eabf3c Mon Sep 17 00:00:00 2001
 From: Josua Mayer <josua@solid-run.com>
 Date: Wed, 1 Jan 2025 14:18:19 +0100
-Subject: [PATCH 2/2] add support for solidrun solidsense n8 board
+Subject: [PATCH] add support for solidrun solidsense n8 board
 
 Signed-off-by: Josua Mayer <josua@solid-run.com>
 ---
@@ -15,7 +15,8 @@ Signed-off-by: Josua Mayer <josua@solid-run.com>
  board/solidrun/solidsense-n8/spl.c            |  133 +++
  board/solidrun/solidsense-n8/supercap.c       |  134 +++
  configs/solidsense-n8_defconfig               |  134 +++
- 10 files changed, 2643 insertions(+), 1 deletion(-)
+ include/configs/imx8mn_evk.h                  |    2 +-
+ 11 files changed, 2644 insertions(+), 2 deletions(-)
  create mode 100644 arch/arm/dts/imx8mn-solidsense-n8-compact-u-boot.dtsi
  create mode 100644 arch/arm/dts/imx8mn-solidsense-n8-compact.dts
  create mode 100644 board/solidrun/solidsense-n8/Kconfig
@@ -2745,6 +2746,19 @@ index 00000000000..320066f92fd
 +CONFIG_USB_EHCI_HCD=y
 +CONFIG_IMX_WATCHDOG=y
 +CONFIG_WDT=y
+diff --git a/include/configs/imx8mn_evk.h b/include/configs/imx8mn_evk.h
+index 6c5c6406d6f..1dd3f1d36b4 100644
+--- a/include/configs/imx8mn_evk.h
++++ b/include/configs/imx8mn_evk.h
+@@ -141,7 +141,7 @@
+ #define CFG_SYS_SDRAM_BASE           0x40000000
+ #define PHYS_SDRAM                      0x40000000
+ 
+-#ifdef CONFIG_TARGET_IMX8MN_DDR3_EVK
++#if defined(CONFIG_TARGET_IMX8MN_DDR3_EVK) || defined(CONFIG_TARGET_SOLIDSENSE_N8)
+ #define PHYS_SDRAM_SIZE			0x40000000 /* 1GB DDR */
+ #else
+ #define PHYS_SDRAM_SIZE			0x80000000 /* 2GB DDR */
 -- 
 2.43.0
 
