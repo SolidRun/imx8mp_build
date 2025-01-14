@@ -53,7 +53,7 @@ set -e
 REPO_PREFIX=`git log -1 --pretty=format:%h || echo "unknown"`
 
 export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
-export CROSS_COMPILE=aarch64-none-elf-
+export CROSS_COMPILE=aarch64-linux-gnu-
 export ARCH=arm64
 PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
 
@@ -197,7 +197,7 @@ do_build_imximage
 ###############################################################################
 # Building Linux
 ###############################################################################
-export ARCH=arm64 CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
+export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
