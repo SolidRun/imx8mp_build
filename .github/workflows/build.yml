@@ -78,8 +78,8 @@ jobs:
             env SHALLOW=true BOOTSOURCE=mmc-boot0 DISTRO=buildroot ./runme.sh
             env SHALLOW=true BOOTSOURCE=mmc-boot1 DISTRO=buildroot ./runme.sh
             env SHALLOW=true BOOTSOURCE=mmc-data DISTRO=debian ./runme.sh
-            env SHALLOW=true BOOTSOURCE=mmc-boot0 DISTRO=buildroot ./runme.sh
-            env SHALLOW=true BOOTSOURCE=mmc-boot1 DISTRO=buildroot ./runme.sh
+            env SHALLOW=true BOOTSOURCE=mmc-boot0 DISTRO=debian ./runme.sh
+            env SHALLOW=true BOOTSOURCE=mmc-boot1 DISTRO=debian ./runme.sh
 
       - name: Select artifacts for publishing
         shell: bash -e {0}

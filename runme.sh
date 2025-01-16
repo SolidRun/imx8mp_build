@@ -52,7 +52,6 @@ set -e
 
 REPO_PREFIX=`git log -1 --pretty=format:%h || echo "unknown"`
 
-export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
 export CROSS_COMPILE=aarch64-linux-gnu-
 export ARCH=arm64
 PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
@@ -65,14 +64,6 @@ if [ "x$GIT_CONF" == "x" ]; then
 	export GIT_AUTHOR_EMAIL="support@solid-run.com"
 	export GIT_COMMITTER_NAME="${GIT_AUTHOR_NAME}"
 	export GIT_COMMITTER_EMAIL="${GIT_AUTHOR_EMAIL}"
-fi
-
-# Install Toolchain
-if [[ ! -d $ROOTDIR/build/toolchain ]]; then
-	mkdir -p $ROOTDIR/build/toolchain
-	cd $ROOTDIR/build/toolchain
-	wget https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
-	tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
 fi
 
 ###############################################################################
@@ -335,7 +326,7 @@ EOF
 			-device virtio-blk-device,drive=hd0 \
 			-nographic \
 			-no-reboot \
-			-kernel "${ROOTDIR}/images/tmp/Image" \
+			-kernel "$ROOTDIR/images/tmp/linux/boot/Image" \
 			-append "console=ttyAMA0 root=/dev/vda rootfstype=ext2 ip=dhcp rw init=/stage2.sh" \
 
 		:
@@ -344,7 +335,7 @@ EOF
 		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
 
 		# fix filesystem errors
-		e2fsck -f -y rootfs.e2.orig
+		e2fsck -f -y rootfs.e2.orig || true
 	fi
 
 	# export final rootfs for next steps
