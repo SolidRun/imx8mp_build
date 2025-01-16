@@ -6,7 +6,7 @@
 
 declare -A GIT_REL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
-GIT_REL[uboot-imx]=lf-6.6.36-2.1.0
+GIT_REL[uboot-imx]=lf-6.6.52-2.2.0
 GIT_REL[linux-imx]=lf-6.6.52-2.2.0
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 PKG_VER[firmware-imx]=8.26-d4c33ab
