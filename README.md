@@ -3,9 +3,9 @@
 ## Introduction
 
 Main intention of this repository is to produce a reference system for i.MX8MN based product evaluation.
-Automatic binary releases are available on our website [IMX8MN_Images](https://images.solid-run.com/IMX8/imx8mn_compact_build) for download.
+Automatic binary releases are available on our website [IMX8MN_Images](https://images.solid-run.com/IMX8/imx8mn_build) for download.
 
-The build script provides ready to use **Debian/Buildroot** images that can be deployed on micro SD and future on eMMC.
+The build script provides ready to use **Debian/Buildroot** images that can be deployed on micro SD and eMMC.
 
 ## Compiling Image from Source
 
