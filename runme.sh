@@ -335,8 +335,8 @@ do_build_buildroot() {
 	# make menuconfig
 	make savedefconfig BR2_DEFCONFIG="${ROOTDIR}/build/buildroot/defconfig"
 	make -j${PARALLEL}
-	cp $ROOTDIR/build/buildroot/output/images/rootfs.ext2 $ROOTDIR/images/tmp/rootfs.ext4
-	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
+	cp -L --sparse=always $ROOTDIR/build/buildroot/output/images/rootfs.ext2 "${ROOTFS_IMG}"
+	cp -L --sparse=always $ROOTDIR/build/buildroot/output/images/rootfs.cpio "$ROOTDIR/images/tmp/"
 	# Preparing initrd
 	mkimage -A arm64 -O linux -T ramdisk -d $ROOTDIR/images/tmp/rootfs.cpio $ROOTDIR/images/tmp/initrd.img
 }
@@ -416,7 +416,7 @@ EOF
 	fi;
 
 	# export final rootfs for next steps
-	cp --sparse=always rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
+	cp --sparse=always rootfs.e2.orig "${ROOTFS_IMG}"
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
 	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
@@ -501,7 +501,7 @@ IMAGE_BOOTPART_START=$((8*1024*1024)) # partition start aligned to 8MiB
 IMAGE_BOOTPART_SIZE=$((150*1024*1024)) # bootpart size = 150MiB
 IMAGE_BOOTPART_END=$((IMAGE_BOOTPART_START+IMAGE_BOOTPART_SIZE-1))
 IMAGE_ROOTPART_START=$((IMAGE_BOOTPART_END+1))
-IMAGE_ROOTPART_SIZE=`stat -c "%s" tmp/rootfs.ext4`
+IMAGE_ROOTPART_SIZE=`stat -c "%s" ${ROOTFS_IMG}`
 IMAGE_ROOTPART_END=$((IMAGE_ROOTPART_START+IMAGE_ROOTPART_SIZE-1))
 IMAGE_SIZE=$((IMAGE_ROOTPART_END+1))
 truncate -s ${IMAGE_SIZE} ${IMG}
@@ -520,6 +520,5 @@ fi
 
 dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 dd if=tmp/part1.fat32 of=${IMG} seek=$((IMAGE_BOOTPART_START/512)) conv=notrunc,sparse
-dd if=${ROOTFS_IMG} of=${IMG} seek=$((IMAGE_ROOTPART_START/512)) conv=notrunc,sparse
 dd if=${ROOTFS_IMG} of=${IMG} seek=$((IMAGE_ROOTPART_START/512)) conv=notrunc,sparse
 echo -e "\n\n*** Image is ready - images/${IMG}"
