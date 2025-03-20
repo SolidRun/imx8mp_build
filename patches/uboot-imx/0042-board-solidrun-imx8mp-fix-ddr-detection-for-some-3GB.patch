@@ -1,0 +1,43 @@
+From aee46f4c446015b8fdcba7ff4c3331c587da834f Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Thu, 20 Mar 2025 14:42:20 +0100
+Subject: [PATCH] board: solidrun: imx8mp: fix ddr detection for some 3GB soms
+ with micron
+
+Some 3GB size SoMs using Micron sdram can succeed training with 8GB
+samsung parameters.
+Add a 3GB check to the 8GB path to avoid wrong detection.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ board/solidrun/imx8mp_solidrun/spl.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/board/solidrun/imx8mp_solidrun/spl.c b/board/solidrun/imx8mp_solidrun/spl.c
+index 3f76caad1..1adabec03 100644
+--- a/board/solidrun/imx8mp_solidrun/spl.c
++++ b/board/solidrun/imx8mp_solidrun/spl.c
+@@ -193,13 +193,17 @@ static bool spl_generic_ddr_init(void)
+ 	int ret;
+ 	bool output = true;
+ 
+-	/* Try 8GB Micron. */
++	/* Try 8GB Micron.
++	 * Will work with: 3G Micron as well.
++	 */
+ 	timing_patch_apply(&dram_timing_4gb_samsung_micron, &dram_timing_patch_8gb_micron);
+ 	ret = ddr_init(&dram_timing_4gb_samsung_micron);
+ 	timing_patch_apply(&dram_timing_4gb_samsung_micron, &dram_timing_patch_8gb_micron);
+ 	if (!ret) {
+-		printf("DDR 8G Micron identified!\n");
+-		goto exit;
++		if (!spl_dram_is_3G()) {
++			printf("DDR 8G Micron identified!\n");
++			goto exit;
++		}
+ 	}
+ 
+ 	/* Try 4G Samsung.
+-- 
+2.43.0
+
