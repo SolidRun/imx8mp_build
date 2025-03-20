@@ -4,15 +4,23 @@
 # General configurations
 ###############################################################################
 
-declare -A GIT_REL
+declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf_v2.6
+GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf_v2022.04
+GIT_URL[uboot-imx]=https://github.com/nxp-imx/uboot-imx.git
 GIT_REL[linux-imx]=lf-5.15.y
+GIT_URL[linux-imx]=https://github.com/nxp-imx/linux-imx.git
 GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
+GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
 GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
+GIT_URL[imx-optee-os]=https://github.com/nxp-imx/imx-optee-os.git
 PKG_VER[firmware-imx]=8.10
 GIT_REL[mfgtools]=uuu_1.4.77
+GIT_URL[mfgtools]=https://github.com/NXPmicro/mfgtools.git
+GIT_REL[ftpm]=master
 GIT_COMMIT[ftpm]=af2185656b0c47afc87b76fa89283bdf170e2759
+GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
 
 # Distribution for rootfs
 # - buildroot
@@ -86,7 +94,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -94,22 +102,18 @@ for i in $COMPONENTS; do
 		cd $ROOTDIR/build/
 
 		CHECKOUT=${GIT_REL["$i"]}
-		git clone ${SHALLOW_FLAG} https://github.com/nxp-imx/$i -b $CHECKOUT
+		git clone ${SHALLOW_FLAG} ${GIT_URL["$i"]} -b ${GIT_REL["$i"]} $i
 		cd $i
+
+		if [ -n "${GIT_COMMIT[$i]}" ]; then
+			git reset --hard ${GIT_COMMIT["$i"]}
+		fi
+
 		if [[ -d $ROOTDIR/patches/$i/ ]]; then
 			git am $ROOTDIR/patches/$i/*.patch
 		fi
 	fi
 done
-
-if [[ ! -d $ROOTDIR/build/mfgtools ]]; then
-	cd $ROOTDIR/build
-	git clone https://github.com/NXPmicro/mfgtools.git -b ${GIT_REL["mfgtools"]}
-	cd mfgtools
-	git am ../../patches/mfgtools/*.patch
-	cmake .
-	make
-fi
 
 if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cd $ROOTDIR/build/
@@ -126,17 +130,6 @@ if [[ ! -d $ROOTDIR/build/buildroot ]]; then
 	if [[ -d $ROOTDIR/patches/buildroot ]]; then
 		cd $ROOTDIR/build/buildroot
 		git am $ROOTDIR/patches/buildroot/*.patch
-	fi
-fi
-
-if [[ ! -d $ROOTDIR/build/ftpm ]]; then
-	cd $ROOTDIR/build
-	git clone ${SHALLOW_FLAG} https://github.com/Microsoft/MSRSec.git ftpm
-	cd $ROOTDIR/build/ftpm; git reset --hard ${GIT_COMMIT["ftpm"]}; cd ..
-
-	if [[ -d $ROOTDIR/patches/ftpm ]]; then
-		cd $ROOTDIR/build/ftpm
-		git am $ROOTDIR/patches/ftpm/*.patch
 	fi
 fi
 
