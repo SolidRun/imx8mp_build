@@ -5,17 +5,17 @@
 ###############################################################################
 
 declare -A GIT_REL GIT_COMMIT GIT_URL
-GIT_REL[imx-atf]=lf_v2.6
+GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
-GIT_REL[uboot-imx]=lf_v2022.04
-GIT_URL[uboot-imx]=https://github.com/nxp-imx/uboot-imx.git
+GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
+GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-5.15.y
 GIT_URL[linux-imx]=https://github.com/nxp-imx/linux-imx.git
-GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
+GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
 GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
 GIT_URL[imx-optee-os]=https://github.com/nxp-imx/imx-optee-os.git
-PKG_VER[firmware-imx]=8.10
+PKG_VER[firmware-imx]=8.26-d4c33ab
 GIT_REL[mfgtools]=uuu_1.4.77
 GIT_URL[mfgtools]=https://github.com/NXPmicro/mfgtools.git
 GIT_REL[ftpm]=master
