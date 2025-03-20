@@ -1,0 +1,6 @@
+config BR2_PACKAGE_NVMEMFUSE
+	bool "nvmemfuse"
+	help
+	  Write/Read NVMEM fuses.
+
+	  http://no_site.com/

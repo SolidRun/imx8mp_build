@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 ###############################################################################
 # General configurations
@@ -11,7 +10,9 @@ GIT_REL[uboot-imx]=lf_v2022.04
 GIT_REL[linux-imx]=lf-5.15.y
 GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
+PKG_VER[firmware-imx]=8.10
 GIT_REL[mfgtools]=uuu_1.4.77
+GIT_COMMIT[ftpm]=af2185656b0c47afc87b76fa89283bdf170e2759
 
 # Distribution for rootfs
 # - buildroot
@@ -19,20 +20,22 @@ GIT_REL[mfgtools]=uuu_1.4.77
 : ${DISTRO:=buildroot}
 
 ## Buildroot Options
-: ${BUILDROOT_VERSION:=2023.11.3}
-GIT_REL[buildroot]=${BUILDROOT_VERSION}
+: ${BUILDROOT_VERSION:=2023.11}
 : ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
-: ${BUILDROOT_ROOTFS_SIZE:=512M}
+: ${BUILDROOT_ROOTFS_SIZE:=192M}
+: ${BR2_PRIMARY_SITE:=}
 ## Debian Options
-# - bookworm
-# - bullseye
-: ${DEBIAN_VERSION:=bookworm}
+: ${DEBIAN_VERSION:=bullseye}
 : ${DEBIAN_ROOTFS_SIZE:=936M}
 : ${DEBIAN_PACKAGES:="apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd,systemd-sysv,dbus,tio,usbutils,wget,xterm,xz-utils"}
 : ${HOST_NAME:=imx8mp}
-## Kernel Options:
-: ${INCLUDE_KERNEL_MODULES:=true}
-: ${LINUX_DEFCONFIG:=imx_v8_defconfig}
+
+# Boot Source
+# - mmc-data (SD/eMMC Partition 0)
+# - mmc-boot0 (eMMC Partition boot0)
+# - mmc-boot1 (eMMC Partition boot1)
+: ${BOOTSOURCE:=mmc-data}
+
 # optee-os secure storage on emmc rpmb
 # requires protected hardware-unique-key implemetation:
 # - tee_otp_get_hw_unique_key
@@ -45,26 +48,26 @@ GIT_REL[buildroot]=${BUILDROOT_VERSION}
 # Not implemented.
 : ${OPTEE_STORAGE_PRIVATE_REE:=false}
 
-#UBOOT_ENVIRONMENT -
-# - spi (SPI FLash)
-# - mmc:0:* (MMC 0) <-- wifi module on i.mx8mp solidrun som
-# - mmc:1:0 (MMC 1 Partition 0) <-- microSD on HummingBoard Pulse
-# - mmc:1:1 (MMC 1 Partition boot0) <-- invalid on HummingBoard Pulse
-# - mmc:1:2 (MMC 1 Partition boot1) <-- invalid on HummingBoard Pulse
-# - mmc:2:0 (MMC 2 Partition 0) <-- eMMC on HummingBoard Pulse
-# - mmc:2:1 (MMC 2 Partition boot0) <-- eMMC boot0 on HummingBoard Pulse
-# - mmc:2:2 (MMC 2 Partition boot1) <-- eMMC boot1 on HummingBoard Pulse
-: ${UBOOT_ENVIRONMENT:=mmc:1:0} # <-- default microSD on HummingBoard Pulse
-
 ROOTDIR=`pwd`
 
 ###
 : ${SHALLOW:=true}
+if [ "x$SHALLOW" == "xtrue" ]; then
+        SHALLOW_FLAG="--depth 500"
+fi
+
+# we don't have status code checks for each step - use "-e" with a trap instead
+function error() {
+	status=$?
+	printf "ERROR: Line %i failed with status %i: %s\n" $BASH_LINENO $status "$BASH_COMMAND" >&2
+	exit $status
+}
+trap error ERR
+set -e
 
 REPO_PREFIX=`git log -1 --pretty=format:%h || echo "unknown"`
 
-export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
-export CROSS_COMPILE=aarch64-none-elf-
+export CROSS_COMPILE=aarch64-linux-gnu-
 export ARCH=arm64
 PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
 
@@ -78,71 +81,69 @@ if [ "x$GIT_CONF" == "x" ]; then
 	export GIT_COMMITTER_EMAIL="${GIT_AUTHOR_EMAIL}"
 fi
 
-# Install Toolchain
-if [[ ! -d $ROOTDIR/build/toolchain ]]; then
-	mkdir -p $ROOTDIR/build/toolchain
-	cd $ROOTDIR/build/toolchain
-	wget https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
-	tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
-fi
-
 ###############################################################################
 # Source code clonig
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools buildroot"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
 	if [[ ! -d $ROOTDIR/build/$i ]]; then
 		cd $ROOTDIR/build/
 
-		if [ "x$SHALLOW" == "xtrue" ]; then
-			SHALLOW_FLAG="--depth 500"
-		fi
-
 		CHECKOUT=${GIT_REL["$i"]}
-		COMMIT=
-		case $i in
-			ftpm)
-				CHECKOUT=master
-				COMMIT=81abeb9fa968340438b4b0c08aa6685833f0bfa1
-				SHALLOW_FLAG=
-				CLONE="https://github.com/Microsoft/MSRSec.git ftpm"
-			;;
-			buildroot)
-				CLONE="https://github.com/buildroot/buildroot"
-			;;
-			*)
-				CLONE="https://github.com/nxp-imx/$i"
-			;;
-		esac
-
-		git clone ${SHALLOW_FLAG} ${CLONE} -b $CHECKOUT
+		git clone ${SHALLOW_FLAG} https://github.com/nxp-imx/$i -b $CHECKOUT
 		cd $i
-
-		if [ -n "${COMMIT}" ]; then
-			git reset --hard ${COMMIT}
-		fi
-
 		if [[ -d $ROOTDIR/patches/$i/ ]]; then
 			git am $ROOTDIR/patches/$i/*.patch
 		fi
 	fi
 done
 
+if [[ ! -d $ROOTDIR/build/mfgtools ]]; then
+	cd $ROOTDIR/build
+	git clone https://github.com/NXPmicro/mfgtools.git -b ${GIT_REL["mfgtools"]}
+	cd mfgtools
+	git am ../../patches/mfgtools/*.patch
+	cmake .
+	make
+fi
+
 if [[ ! -d $ROOTDIR/build/firmware ]]; then
 	cd $ROOTDIR/build/
 	mkdir -p firmware
 	cd firmware
-	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-8.10.bin
-	bash firmware-imx-8.10.bin --auto-accept
+	wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-${PKG_VER["firmware-imx"]}.bin
+	bash firmware-imx-${PKG_VER["firmware-imx"]}.bin --auto-accept
+fi
+
+if [[ ! -d $ROOTDIR/build/buildroot ]]; then
+	cd $ROOTDIR/build
+	git clone ${SHALLOW_FLAG} https://github.com/buildroot/buildroot -b $BUILDROOT_VERSION
+
+	if [[ -d $ROOTDIR/patches/buildroot ]]; then
+		cd $ROOTDIR/build/buildroot
+		git am $ROOTDIR/patches/buildroot/*.patch
+	fi
+fi
+
+if [[ ! -d $ROOTDIR/build/ftpm ]]; then
+	cd $ROOTDIR/build
+	git clone ${SHALLOW_FLAG} https://github.com/Microsoft/MSRSec.git ftpm
+	cd $ROOTDIR/build/ftpm; git reset --hard ${GIT_COMMIT["ftpm"]}; cd ..
+
+	if [[ -d $ROOTDIR/patches/ftpm ]]; then
+		cd $ROOTDIR/build/ftpm
+		git am $ROOTDIR/patches/ftpm/*.patch
+	fi
 fi
 
 # Copy firmware
 cd $ROOTDIR/build/firmware
-cp -v $(find . | awk '/train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
+cp -v $(find . | awk '/ddr4_.mem|lpddr4_.*train|hdmi_imx8|dp_imx8/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
+
 
 ###############################################################################
 # Building OPTEE
@@ -251,71 +252,119 @@ echo "Building Bootloader"
 echo "================================="
 
 # Build ATF
+do_build_atf() {
+	cd $ROOTDIR/build/imx-atf
+	rm -rf build
+	make -j$(nproc) PLAT=imx8mp SPD=opteed bl31
+	cp -v build/imx8mp/release/bl31.bin $ROOTDIR/build/imx-mkimage/iMX8M/
+}
 echo "*** Building ATF"
-cd $ROOTDIR/build/imx-atf
-rm -rf build
-make -j$(nproc) PLAT=imx8mp SPD=opteed bl31
-cp build/imx8mp/release/bl31.bin $ROOTDIR/build/imx-mkimage/iMX8M/
+do_build_atf
 
-# Build u-boot
-echo "*** Building u-boot"
-cd $ROOTDIR/build/uboot-imx/
-make imx8mp_solidrun_defconfig
-# make menuconfig
-[[ "${UBOOT_ENVIRONMENT}" =~ (.*):(.*):(.*) ]] || [[ "${UBOOT_ENVIRONMENT}" =~ (.*) ]]
-if [ "x${BASH_REMATCH[1]}" = "xmmc" ]; then
+do_build_uboot() {
+	cd $ROOTDIR/build/uboot-imx
+	./scripts/kconfig/merge_config.sh configs/imx8mp_solidrun_defconfig $ROOTDIR/configs/uboot.extra
+
+	if [ "x${BOOTSOURCE}" = "xmmc-data" ];  then
+		# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
-CONFIG_SYS_MMC_ENV_DEV=${BASH_REMATCH[2]}
-CONFIG_SYS_MMC_ENV_PART=${BASH_REMATCH[3]}
-CONFIG_ENV_IS_IN_SPI_FLASH=n
+CONFIG_SYS_MMC_ENV_PART=0
+CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x300
 EOF
-else
-	echo "ERROR: \$UBOOT_ENVIRONMENT setting invalid"
-	exit 1
-fi
-make -j$(nproc)
-set +e
-cp -v $(find . | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mkimage$/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
-cp tools/mkimage ${ROOTDIR}/build//imx-mkimage/iMX8M/mkimage_uboot
-set -e
+	fi
+	if [ "x${BOOTSOURCE}" = "xmmc-boot0" ];  then
+		# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
+cat >> .config << EOF
+CONFIG_ENV_IS_IN_MMC=y
+CONFIG_SYS_MMC_ENV_PART=1
+CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
+EOF
+	fi
+	if [ "x${BOOTSOURCE}" = "xmmc-boot1" ];  then
+		# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
+cat >> .config << EOF
+CONFIG_ENV_IS_IN_MMC=y
+CONFIG_SYS_MMC_ENV_PART=2
+CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
+EOF
+	fi
+
+	make olddefconfig
+	# make menuconfig
+	make -j$(nproc)
+	make savedefconfig
+
+	cp -v $(find . -type f | awk '/u-boot-spl.bin$|u-boot.bin$|u-boot-nodtb.bin$|.*\.dtb$|mkimage$/' ORS=" ") ${ROOTDIR}/build/imx-mkimage/iMX8M/
+	cp -v tools/mkimage ${ROOTDIR}/build//imx-mkimage/iMX8M/mkimage_uboot
+}
+echo "*** Building u-boot"
+do_build_uboot
+
+# Assemble boot image
+do_build_imximage() {
+	unset ARCH CROSS_COMPILE
+	cd $ROOTDIR/build/imx-mkimage
+	make clean
+	make SOC=iMX8MP dtbs=imx8mp-solidrun.dtb BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
+	mkdir -p $ROOTDIR/images
+	cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
+}
+do_build_imximage
 
 ###############################################################################
 # Building Linux
 ###############################################################################
-#export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
+export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
 cd $ROOTDIR/build/linux-imx
-make $LINUX_DEFCONFIG
-./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/kernel.extra
+./scripts/kconfig/merge_config.sh arch/arm64/configs/imx_v8_defconfig $ROOTDIR/configs/kernel.extra
+make olddefconfig
 # make menuconfig
-make -j$(nproc) Image dtbs
-rm -rf ${ROOTDIR}/images/tmp/linux
-mkdir -p ${ROOTDIR}/images/tmp/linux/boot/freescale
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ${ROOTDIR}/images/tmp/linux/boot/Image
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ${ROOTDIR}/images/tmp/linux/boot/freescale/
-cp -v System.map ${ROOTDIR}/images/tmp/linux/boot/
-cp -v .config ${ROOTDIR}/images/tmp/linux/boot/config
-if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
-	make -j$(nproc) modules
-	make -j$(nproc) INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/linux/usr" modules_install
-fi
+make -j$(nproc) Image Image.gz dtbs modules
+make savedefconfig
 KRELEASE=`make kernelrelease`
-cd ${ROOTDIR}/images/tmp/linux; tar --owner=root --group=root -cpf ${ROOTDIR}/images/linux-${REPO_PREFIX}.tar *
+rm -rf $ROOTDIR/images/tmp/linux
+mkdir -p $ROOTDIR/images/tmp/linux
+mkdir -p $ROOTDIR/images/tmp/linux/boot/freescale
+make -j$(nproc) INSTALL_MOD_PATH=$ROOTDIR/images/tmp/linux/usr INSTALL_MOD_STRIP=1 modules_install
+cp $ROOTDIR/build/linux-imx/System.map $ROOTDIR/images/tmp/linux/boot
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image $ROOTDIR/images/tmp/linux/boot
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image.gz $ROOTDIR/images/tmp/linux/boot
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/imx8mp-*.dtb $ROOTDIR/images/tmp/linux/boot/freescale/
 
-# Build external Linux Headers package for compiling modules
-cd $ROOTDIR/build/linux-imx
-rm -rf ${ROOTDIR}/images/tmp/linux-headers
-mkdir -p ${ROOTDIR}/images/tmp/linux-headers
-tempfile=$(mktemp)
-find . -name Makefile\* -o -name Kconfig\* -o -name \*.pl > $tempfile
-find arch/arm64/include .config Module.symvers include scripts -type f >> $tempfile
-tar -c -f - -T $tempfile | tar -C ${ROOTDIR}/images/tmp/linux-headers -xf -
-rm -f $tempfile
-unset tempfile
-cd ${ROOTDIR}/images/tmp/linux-headers; tar --owner=root --group=root -cpf ${ROOTDIR}/images/linux-headers-${REPO_PREFIX}.tar *
+# TODO: can build external modules here
+
+# regenerate modules dependencies
+depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
+
+function pkg_kernel() {
+# package kernel individually
+	rm -f "${ROOTDIR}/images/linux/linux.tar*"
+	cd "${ROOTDIR}/images/tmp/linux"; tar -c --owner=root:0 -f "${ROOTDIR}/images/linux-${REPO_PREFIX}.tar" boot/* usr/lib/modules/*; cd "${ROOTDIR}"
+}
+pkg_kernel
+
+function pkg_kernel_headers() {
+	# Build external Linux Headers package for compiling modules
+	cd "${ROOTDIR}/build/linux-imx"
+	rm -rf "${ROOTDIR}/images/tmp/linux-headers"
+	mkdir -p ${ROOTDIR}/images/tmp/linux-headers
+	tempfile=$(mktemp)
+	find . -name Makefile\* -o -name Kconfig\* -o -name \*.pl > $tempfile
+	find arch/arm64/include include scripts -type f >> $tempfile
+	tar -c -f - -T $tempfile | tar -C "${ROOTDIR}/images/tmp/linux-headers" -xf -
+	cd "${ROOTDIR}/build/linux-imx"
+	find arch/arm64/include .config Module.symvers include scripts -type f > $tempfile
+	tar -c -f - -T $tempfile | tar -C "${ROOTDIR}/images/tmp/linux-headers" -xf -
+	rm -f $tempfile
+	unset tempfile
+	cd "${ROOTDIR}/images/tmp/linux-headers"
+	tar cpf "${ROOTDIR}/images/linux-headers-${REPO_PREFIX}.tar" *
+}
+pkg_kernel_headers
 
 ###############################################################################
 # Building FS Buildroot/Debian
@@ -328,17 +377,15 @@ do_build_buildroot() {
 	echo "*** Building Buildroot FS..."
 	echo "================================="
 	cd $ROOTDIR/build/buildroot
+
 	export FORCE_UNSAFE_CONFIGURE=1
 	cp $ROOTDIR/configs/${BUILDROOT_DEFCONFIG} $ROOTDIR/build/buildroot/configs
+	printf 'BR2_PRIMARY_SITE="%s"\n' "${BR2_PRIMARY_SITE}" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
 	echo -e "\nBR2_TARGET_ROOTFS_EXT2_SIZE=\"${BUILDROOT_ROOTFS_SIZE}\"" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
-	make ${BUILDROOT_DEFCONFIG}
-	# make menuconfig
+	make ${BUILDROOT_DEFCONFIG} BR2_EXTERNAL=${ROOTDIR}/packages/buildroot-external/nvmemfuse
 	make savedefconfig BR2_DEFCONFIG="${ROOTDIR}/build/buildroot/defconfig"
 	make -j${PARALLEL}
-	cp -L --sparse=always $ROOTDIR/build/buildroot/output/images/rootfs.ext2 "${ROOTFS_IMG}"
-	cp -L --sparse=always $ROOTDIR/build/buildroot/output/images/rootfs.cpio "$ROOTDIR/images/tmp/"
-	# Preparing initrd
-	mkimage -A arm64 -O linux -T ramdisk -d $ROOTDIR/images/tmp/rootfs.cpio $ROOTDIR/images/tmp/initrd.img
+	cp -L --sparse=always $ROOTDIR/build/buildroot/output/images/rootfs.ext2 $ROOTDIR/images/tmp/rootfs.ext4
 }
 
 do_build_debian() {
@@ -348,7 +395,7 @@ do_build_debian() {
 	mkdir -p $ROOTDIR/build/debian
 	cd $ROOTDIR/build/debian
 
-# (re-)generate only if rootfs doesn't exist or runme script has changed
+	# (re-)generate only if rootfs doesn't exist or runme script has changed
 	if [ ! -f rootfs.e2.orig ] || [[ ${ROOTDIR}/${BASH_SOURCE[0]} -nt rootfs.e2.orig ]]; then
 		rm -f rootfs.e2.orig
 
@@ -406,17 +453,20 @@ EOF
 			-device virtio-blk-device,drive=hd0 \
 			-nographic \
 			-no-reboot \
-			-kernel "${ROOTDIR}/images/tmp/linux/boot/Image" \
+			-kernel "$ROOTDIR/images/tmp/linux/boot/Image" \
 			-append "console=ttyAMA0 root=/dev/vda rootfstype=ext2 ip=dhcp rw init=/stage2.sh" \
 
 		:
 
 		# convert to ext4
 		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
-	fi;
+
+		# fix filesystem errors
+		e2fsck -f -y rootfs.e2.orig || true
+	fi
 
 	# export final rootfs for next steps
-	cp --sparse=always rootfs.e2.orig "${ROOTFS_IMG}"
+	cp --sparse=always rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
 	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
@@ -446,19 +496,6 @@ EOF
 }
 
 ###############################################################################
-# Bring bootlader all together
-###############################################################################
-echo "================================="
-echo "*** Creating boot loader image"
-echo "================================="
-unset ARCH CROSS_COMPILE
-cd $ROOTDIR/build/imx-mkimage
-make clean
-make SOC=iMX8MP dtbs=imx8mp-solidrun.dtb TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
-mkdir -p $ROOTDIR/images
-cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${UBOOT_ENVIRONMENT}-${REPO_PREFIX}.bin
-
-###############################################################################
 # Assembling Boot Image
 ###############################################################################
 echo "================================="
@@ -468,57 +505,47 @@ echo "================================="
 # Create disk images
 echo "*** Creating disk images"
 cd $ROOTDIR/images
-dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
-env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 
-if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
-
-	if [ "x$DISTRO" != "xbuildroot" ]; then
-		# Prepare rootfs
-		echo "Preparing rootfs"
-		KERNEL_MODULES_SIZE_KB=$(du -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules/" | cut -f1)
-		KERNEL_MODULES_SIZE_MB=$(echo "$KERNEL_MODULES_SIZE_KB / 1024 + 1" | bc)
-		ROOTFS_SIZE=`stat -c "%s" tmp/rootfs.ext4`
-		ROOTFS_SIZE_MB=$(($ROOTFS_SIZE / (1024 * 1024) ))
-		TOTAL_ROOTFS_SIZE_MB=$((ROOTFS_SIZE_MB + KERNEL_MODULES_SIZE_MB))
-		truncate -s ${TOTAL_ROOTFS_SIZE_MB}M ${ROOTFS_IMG}
-		set +e
-		e2fsck -f -y ${ROOTFS_IMG}
-		set -e
-		resize2fs ${ROOTFS_IMG}
-	fi
-
-	echo "copying kernel modules ..."
-	find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "$ROOTFS_IMG:usr/lib/modules" -a
-	find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "$ROOTFS_IMG:usr/lib/modules" -a
+# use different filenames for OS-only and combined images
+if [ "x${BOOTSOURCE}" = "xmmc-data" ]; then
+	IMG=${DISTRO}-bootimg-${REPO_PREFIX}.img
+else
+	IMG=${DISTRO}-rootimg-${REPO_PREFIX}.img
 fi
 
-# e2fsck -f -y ${ROOTFS_IMG}
-IMG=imx8mp-sdhc-${DISTRO}-${REPO_PREFIX}.img
-
-# note: partition start and end sectors are inclusive, add/subtract 1 where appropriate
-IMAGE_BOOTPART_START=$((8*1024*1024)) # partition start aligned to 8MiB
-IMAGE_BOOTPART_SIZE=$((150*1024*1024)) # bootpart size = 150MiB
+# calculate partition table
+IMAGE_BOOTPART_START=$((4*1024*1024)) # start first partition after 4MB mark (reserved for u-boot)
+IMAGE_BOOTPART_SIZE=$((60*1024*1024)) # bootpart size = 60MiB
 IMAGE_BOOTPART_END=$((IMAGE_BOOTPART_START+IMAGE_BOOTPART_SIZE-1))
 IMAGE_ROOTPART_START=$((IMAGE_BOOTPART_END+1))
 IMAGE_ROOTPART_SIZE=`stat -c "%s" ${ROOTFS_IMG}`
 IMAGE_ROOTPART_END=$((IMAGE_ROOTPART_START+IMAGE_ROOTPART_SIZE-1))
 IMAGE_SIZE=$((IMAGE_ROOTPART_END+1))
-truncate -s ${IMAGE_SIZE} ${IMG}
+
+rm -f tmp/part1.fat32; truncate -s ${IMAGE_BOOTPART_SIZE} tmp/part1.fat32
+env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
+rm -f ${IMG}; truncate -s ${IMAGE_SIZE} ${IMG}
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary ${IMAGE_BOOTPART_START}B ${IMAGE_BOOTPART_END}B mkpart primary ${IMAGE_ROOTPART_START}B ${IMAGE_ROOTPART_END}B
+
+echo "copying kernel modules ..."
+find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a
+find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a -v
 
 do_generate_extlinux ${ROOTDIR}/images/extlinux.conf ${IMG} 2
 
 mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
-mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/Image ::/Image
+mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
 mmd -i tmp/part1.fat32 ::/freescale
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb ::/freescale
-if [ "x$DISTRO" == "xbuildroot" ]; then
-       mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ::/freescale
+
+# copy boot and rootfs partitions to image
+dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=4 conv=notrunc
+dd if=${ROOTFS_IMG} of=${IMG} bs=1M seek=64 conv=notrunc
+
+# generate combined image with os + bootloader
+if [ "x${BOOTSOURCE}" = "xmmc-data" ]; then
+	dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
 fi
 
-dd if=$ROOTDIR/build/imx-mkimage/iMX8M/flash.bin of=${IMG} bs=1K seek=32 conv=notrunc
-dd if=tmp/part1.fat32 of=${IMG} seek=$((IMAGE_BOOTPART_START/512)) conv=notrunc,sparse
-dd if=${ROOTFS_IMG} of=${IMG} seek=$((IMAGE_ROOTPART_START/512)) conv=notrunc,sparse
-echo -e "\n\n*** Image is ready - images/${IMG}"
+echo -e "\n\n*** Images are ready:\n- images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin\n- images/${IMG}"
