@@ -12,6 +12,7 @@ GIT_REL[linux-imx]=lf-5.15.y
 GIT_REL[imx-mkimage]=lf-6.1.1-1.0.0
 GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
 GIT_REL[mfgtools]=uuu_1.4.77
+GIT_REL[cyw-fmac]=imx-kirkstone-jaculus
 
 # Distribution for rootfs
 # - buildroot
@@ -82,7 +83,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools buildroot"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools buildroot cyw-fmac"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -104,6 +105,9 @@ for i in $COMPONENTS; do
 			;;
 			buildroot)
 				CLONE="https://github.com/buildroot/buildroot"
+			;;
+			cyw-fmac)
+				CLONE="https://github.com/murata-wireless/$i"
 			;;
 			*)
 				CLONE="https://github.com/nxp-imx/$i"
@@ -274,7 +278,6 @@ set -e
 ###############################################################################
 # Building Linux
 ###############################################################################
-#export CROSS_COMPILE=$ROOTDIR/build/buildroot/output/host/bin/aarch64-linux-
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
@@ -294,7 +297,6 @@ if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	make -j$(nproc) INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/linux/usr" modules_install
 fi
 KRELEASE=`make kernelrelease`
-cd ${ROOTDIR}/images/tmp/linux; tar --owner=root --group=root -cpf ${ROOTDIR}/images/linux-${REPO_PREFIX}.tar *
 
 # Build external Linux Headers package for compiling modules
 cd $ROOTDIR/build/linux-imx
@@ -307,6 +309,23 @@ tar -c -f - -T $tempfile | tar -C ${ROOTDIR}/images/tmp/linux-headers -xf -
 rm -f $tempfile
 unset tempfile
 cd ${ROOTDIR}/images/tmp/linux-headers; tar --owner=root --group=root -cpf ${ROOTDIR}/images/linux-headers-${REPO_PREFIX}.tar *
+
+# Build cypress-backports wifi driver
+do_build_cyw_fmac() {
+	cd $ROOTDIR/build/cyw-fmac
+	make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" CROSS_COMPILE="$CROSS_COMPILE" ARCH=arm64 clean
+	make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" CROSS_COMPILE="$CROSS_COMPILE" ARCH=arm64 defconfig-brcmfmac
+	make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" CROSS_COMPILE="$CROSS_COMPILE" ARCH=arm64 -j$(nproc) modules
+	#make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" CROSS_COMPILE="$CROSS_COMPILE" ARCH=arm64 INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/linux/usr" modules_install
+	find . -type f -name "*.ko" -exec install -v -m644 -D {} "${ROOTDIR}/images/tmp/linux/usr/lib/modules/${KRELEASE}/updates/{}" \;
+
+	# regenerate modules dependencies
+	depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
+}
+do_build_cyw_fmac
+
+# generate kernel + modules package
+cd ${ROOTDIR}/images/tmp/linux; tar --owner=root --group=root -cpf ${ROOTDIR}/images/linux-${REPO_PREFIX}.tar *
 
 ###############################################################################
 # Building FS Buildroot/Debian

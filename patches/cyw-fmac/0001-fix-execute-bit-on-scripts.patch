@@ -1,0 +1,39 @@
+From b3757b888cedfe4f74aba44bed8463bb89229578 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Wed, 14 May 2025 16:16:14 +0300
+Subject: [PATCH] fix execute bit on scripts
+
+Resolves build errors such as:
+
+make[2]: execvp: ./lxdialog/check-lxdialog.sh: Permission denied
+---
+ kconf/lxdialog/check-lxdialog.sh | 0
+ scripts/blacklist.sh             | 0
+ scripts/check_depmod.sh          | 0
+ scripts/compress_modules.sh      | 0
+ scripts/make                     | 0
+ 5 files changed, 0 insertions(+), 0 deletions(-)
+ mode change 100644 => 100755 kconf/lxdialog/check-lxdialog.sh
+ mode change 100644 => 100755 scripts/blacklist.sh
+ mode change 100644 => 100755 scripts/check_depmod.sh
+ mode change 100644 => 100755 scripts/compress_modules.sh
+ mode change 100644 => 100755 scripts/make
+
+diff --git a/kconf/lxdialog/check-lxdialog.sh b/kconf/lxdialog/check-lxdialog.sh
+old mode 100644
+new mode 100755
+diff --git a/scripts/blacklist.sh b/scripts/blacklist.sh
+old mode 100644
+new mode 100755
+diff --git a/scripts/check_depmod.sh b/scripts/check_depmod.sh
+old mode 100644
+new mode 100755
+diff --git a/scripts/compress_modules.sh b/scripts/compress_modules.sh
+old mode 100644
+new mode 100755
+diff --git a/scripts/make b/scripts/make
+old mode 100644
+new mode 100755
+-- 
+2.43.0
+
