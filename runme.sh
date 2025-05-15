@@ -63,8 +63,7 @@ ROOTDIR=`pwd`
 
 REPO_PREFIX=`git log -1 --pretty=format:%h || echo "unknown"`
 
-export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
-export CROSS_COMPILE=aarch64-none-elf-
+export CROSS_COMPILE=aarch64-linux-gnu-
 export ARCH=arm64
 PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
 
@@ -76,14 +75,6 @@ if [ "x$GIT_CONF" == "x" ]; then
 	export GIT_AUTHOR_EMAIL="support@solid-run.com"
 	export GIT_COMMITTER_NAME="${GIT_AUTHOR_NAME}"
 	export GIT_COMMITTER_EMAIL="${GIT_AUTHOR_EMAIL}"
-fi
-
-# Install Toolchain
-if [[ ! -d $ROOTDIR/build/toolchain ]]; then
-	mkdir -p $ROOTDIR/build/toolchain
-	cd $ROOTDIR/build/toolchain
-	wget https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
-	tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
 fi
 
 ###############################################################################
@@ -178,7 +169,7 @@ do_build_opteeos() {
 		ARCH=arm \
 		PLATFORM=${PLATFORM} \
 		CROSS_COMPILE64=${CROSS_COMPILE} \
-		CROSS_COMPILE32=${CROSS_COMPILE} \
+		CROSS_COMPILE32=arm-linux-gnueabihf- \
 		CFG_ARM64_core=y \
 		ta_dev_kit
 
