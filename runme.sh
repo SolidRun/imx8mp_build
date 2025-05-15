@@ -22,7 +22,7 @@ GIT_REL[mfgtools]=uuu_1.4.77
 : ${BUILDROOT_VERSION:=2023.11.3}
 GIT_REL[buildroot]=${BUILDROOT_VERSION}
 : ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
-: ${BUILDROOT_ROOTFS_SIZE:=512M}
+: ${BUILDROOT_ROOTFS_SIZE:=768M}
 ## Debian Options
 # - bookworm
 # - bullseye

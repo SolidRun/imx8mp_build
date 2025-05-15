@@ -30,6 +30,8 @@ The build script supports several customisation options that can be applied thro
   - 2020.11.2 (default)
 - BUILDROOT_DEFCONFIG: Choose specific config file name from `config/` folder
   - buildroot_defconfig (default)
+- BUILDROOT_ROOTFS_SIZE
+  - 768M (default)
 - BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
 - DEBIAN_VERSION
   - bullseye (default)
