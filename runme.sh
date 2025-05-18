@@ -408,11 +408,12 @@ EOF
 		qemu-system-aarch64 \
 			-m 1G \
 			-M virt \
-			-cpu cortex-a57 \
+			-cpu max,pauth-impdef=on,sve=on \
 			-smp 4 \
+			-device virtio-rng-device \
 			-netdev user,id=eth0 \
 			-device virtio-net-device,netdev=eth0 \
-			-drive file=rootfs.e2.orig,if=none,format=raw,id=hd0 \
+			-drive file=rootfs.e2.orig,if=none,format=raw,id=hd0,discard=unmap \
 			-device virtio-blk-device,drive=hd0 \
 			-nographic \
 			-no-reboot \
@@ -423,6 +424,15 @@ EOF
 
 		# convert to ext4
 		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
+
+		# fix errors
+		s=0
+		e2fsck -y rootfs.e2.orig || s=$?
+		if [ $s -ge 4 ]; then
+			echo "Error: Couldn't repair generated rootfs."
+			rm -f rootfs.e2.orig
+			exit 1
+		fi
 	fi;
 
 	# export final rootfs for next steps
@@ -482,25 +492,11 @@ dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 
 if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
-
-	if [ "x$DISTRO" != "xbuildroot" ]; then
-		# Prepare rootfs
-		echo "Preparing rootfs"
-		KERNEL_MODULES_SIZE_KB=$(du -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules/" | cut -f1)
-		KERNEL_MODULES_SIZE_MB=$(echo "$KERNEL_MODULES_SIZE_KB / 1024 + 1" | bc)
-		ROOTFS_SIZE=`stat -c "%s" tmp/rootfs.ext4`
-		ROOTFS_SIZE_MB=$(($ROOTFS_SIZE / (1024 * 1024) ))
-		TOTAL_ROOTFS_SIZE_MB=$((ROOTFS_SIZE_MB + KERNEL_MODULES_SIZE_MB))
-		truncate -s ${TOTAL_ROOTFS_SIZE_MB}M ${ROOTFS_IMG}
-		set +e
-		e2fsck -f -y ${ROOTFS_IMG}
-		set -e
-		resize2fs ${ROOTFS_IMG}
-	fi
-
 	echo "copying kernel modules ..."
 	find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "$ROOTFS_IMG:usr/lib/modules" -a
 	find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "$ROOTFS_IMG:usr/lib/modules" -a
+
+	fsck -f -y ${ROOTFS_IMG}
 fi
 
 # e2fsck -f -y ${ROOTFS_IMG}
