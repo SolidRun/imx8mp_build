@@ -9,8 +9,8 @@ GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
-GIT_REL[linux-imx]=lf-5.15.y
-GIT_URL[linux-imx]=https://github.com/nxp-imx/linux-imx.git
+GIT_REL[linux-imx]=lf-6.6-sr-imx8
+GIT_URL[linux-imx]=https://github.com/SolidRun/linux-stable.git
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
 GIT_REL[imx-optee-os]=lf-6.6.23-2.0.0
@@ -484,7 +484,7 @@ LABEL default
 	MENU LABEL default
 	LINUX ../Image
 	FDTDIR ../
-	APPEND console=\${console} root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
+	APPEND console=\${console} earlycon=ec_imx6q,0x30890000,115200 root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
 EOF
 }
 
