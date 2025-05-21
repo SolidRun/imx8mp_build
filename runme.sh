@@ -299,7 +299,7 @@ do_build_imximage() {
 	unset ARCH CROSS_COMPILE
 	cd $ROOTDIR/build/imx-mkimage
 	make clean
-	make SOC=iMX8MP dtbs=imx8mp-solidrun.dtb BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
+	make SOC=iMX8MP dtbs=imx8mp-cubox-m.dtb BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
 	mkdir -p $ROOTDIR/images
 	cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
 }
