@@ -439,7 +439,9 @@ EOF
 	cp --sparse=always rootfs.e2.orig "${ROOTFS_IMG}"
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
-	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
+	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTFS_IMG}:" -a
+
+	fsck -f -y ${ROOTFS_IMG}
 }
 
 # BUILD selected Distro buildroot/debian
@@ -461,7 +463,7 @@ LABEL default
 	MENU LABEL default
 	LINUX ../Image
 	FDTDIR ../
-	APPEND console=\${console} root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
+	APPEND console=\${console} earlycon=ec_imx6q,0x30890000,115200 root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
 EOF
 }
 
@@ -501,6 +503,7 @@ fi
 
 # e2fsck -f -y ${ROOTFS_IMG}
 IMG=imx8mp-sdhc-${DISTRO}-${REPO_PREFIX}.img
+rm -f ${IMG}
 
 # note: partition start and end sectors are inclusive, add/subtract 1 where appropriate
 IMAGE_BOOTPART_START=$((8*1024*1024)) # partition start aligned to 8MiB
