@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "develop-lf-5.15.y-imx8mp" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "develop-lf-5.15.y-imx8mp" ]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -107,7 +107,7 @@ jobs:
   publish_images:
     needs: build_images
     runs-on: self-hosted
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/develop-lf-5.15.y-imx8mp' && github.event_name != 'pull_request'
     steps:
       - name: Download an artifacts from MinIO
         uses: yakubique/minio-download@v1.1.1
