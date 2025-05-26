@@ -104,29 +104,29 @@ jobs:
           target: "/${{ github.repository_id }}/${{ steps.tag_step.outputs.build_tag }}"
           recursive: true
 
-#  publish_images:
-#    needs: build_images
-#    runs-on: self-hosted
-#    if: github.ref == 'refs/heads/develop-lf-6.6.52-2.2.0-imx8mp' && github.event_name != 'pull_request'
-#    steps:
-#      - name: Download an artifacts from MinIO
-#        uses: yakubique/minio-download@v1.1.1
-#        with:
-#          endpoint: http://ciserver.ci:9000
-#          insecure: true
-#          access_key: ${{ secrets.CI_CACHE_MINIO_ACCESS }}
-#          secret_key: ${{ secrets.CI_CACHE_MINIO_SECRET }}
-#          bucket: cipublish
-#          source: "/${{ github.repository_id }}/${{ needs.build_images.outputs.build_tag }}/"
-#          target: "."
-#          recursive: true
-#
-#      - name: Upload to S3
-#        uses: shallwefootball/upload-s3-action@v1.3.3
-#        with:
-#          aws_key_id: ${{ secrets.IMAGES_S3_ACCESS }}
-#          aws_secret_access_key: ${{ secrets.IMAGES_S3_SECRET }}
-#          aws_bucket: ${{ secrets.IMAGES_S3_BUCKET }}
-#          endpoint: ${{ secrets.IMAGES_S3_HOST }}
-#          source_dir: deploy
-#          destination_dir: IMX8/imx8mp_build/lf-6.6.52-2.2.0/${{ needs.build_images.outputs.build_tag }}
+  publish_images:
+    needs: build_images
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/develop-lf-6.6.52-2.2.0-imx8mp' && github.event_name != 'pull_request'
+    steps:
+      - name: Download an artifacts from MinIO
+        uses: yakubique/minio-download@v1.1.1
+        with:
+          endpoint: http://ciserver.ci:9000
+          insecure: true
+          access_key: ${{ secrets.CI_CACHE_MINIO_ACCESS }}
+          secret_key: ${{ secrets.CI_CACHE_MINIO_SECRET }}
+          bucket: cipublish
+          source: "/${{ github.repository_id }}/${{ needs.build_images.outputs.build_tag }}/"
+          target: "."
+          recursive: true
+
+      - name: Upload to S3
+        uses: shallwefootball/upload-s3-action@v1.3.3
+        with:
+          aws_key_id: ${{ secrets.IMAGES_S3_ACCESS }}
+          aws_secret_access_key: ${{ secrets.IMAGES_S3_SECRET }}
+          aws_bucket: ${{ secrets.IMAGES_S3_BUCKET }}
+          endpoint: ${{ secrets.IMAGES_S3_HOST }}
+          source_dir: deploy
+          destination_dir: IMX8/imx8mp_build/lf-6.6.52-2.2.0/${{ needs.build_images.outputs.build_tag }}
