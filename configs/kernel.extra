@@ -4,3 +4,9 @@ CONFIG_IMX_SDMA=m
 # built-in to avoid loading generic phy first
 CONFIG_ADIN_PHY=y
 CONFIG_BRCMFMAC=m
+
+# hummingboard ripple
+CONFIG_RTC_DRV_ABX80X=m
+CONFIG_RFKILL=m
+CONFIG_RFKILL_GPIO=m
+CONFIG_USB_ONBOARD_HUB=m
