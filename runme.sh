@@ -7,10 +7,10 @@ declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
-GIT_COMMIT[uboot-imx]=9cc039a9512b9d4a392bcf592e4bacdd06ef8020
+GIT_COMMIT[uboot-imx]=a31369d37a4b1c7c20ffe21cfefd41620d7c8e75
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
-GIT_COMMIT[linux-imx]=33aaf2aaeaad5cf5eb4f5e8e9944aebf8c934379
+GIT_COMMIT[linux-imx]=956c4e02e2275edf68d4bde59e68b74450029a09
 GIT_URL[linux-imx]=https://github.com/SolidRun/linux-stable.git
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
@@ -327,7 +327,9 @@ make -j$(nproc) INSTALL_MOD_PATH=$ROOTDIR/images/tmp/linux/usr INSTALL_MOD_STRIP
 cp $ROOTDIR/build/linux-imx/System.map $ROOTDIR/images/tmp/linux/boot
 cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image $ROOTDIR/images/tmp/linux/boot
 cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image.gz $ROOTDIR/images/tmp/linux/boot
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/imx8mp-*.dtb $ROOTDIR/images/tmp/linux/boot/freescale/
+for prefix in cubox-m hummingboard sr-som; do
+	find $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/ -iname "imx8mp-${prefix}*.dtb*" -exec cp {} $ROOTDIR/images/tmp/linux/boot/freescale/ \;
+done
 
 # TODO: can build external modules here
 
@@ -531,7 +533,7 @@ mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
 mmd -i tmp/part1.fat32 ::/freescale
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ::/freescale
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb* ::/freescale
 
 # copy boot and rootfs partitions to image
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=4 conv=notrunc
