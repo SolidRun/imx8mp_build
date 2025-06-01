@@ -7,10 +7,10 @@ declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
-GIT_COMMIT[uboot-imx]=eefd4f89d3166d7bb87c0ce5d4cbd7a0adb20cbf
+GIT_COMMIT[uboot-imx]=9cc039a9512b9d4a392bcf592e4bacdd06ef8020
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
-GIT_COMMIT[linux-imx]=a36af52bf2b1d986d3831754f3cad71cb4d84092
+GIT_COMMIT[linux-imx]=33aaf2aaeaad5cf5eb4f5e8e9944aebf8c934379
 GIT_URL[linux-imx]=https://github.com/SolidRun/linux-stable.git
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
@@ -300,7 +300,7 @@ do_build_imximage() {
 	unset ARCH CROSS_COMPILE
 	cd $ROOTDIR/build/imx-mkimage
 	make clean
-	make SOC=iMX8MP dtbs=imx8mp-cubox-m.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
+	make SOC=iMX8MP dtbs=imx8mp-cubox-m.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-mate.dtb imx8mp-hummingboard-pro.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
 	mkdir -p $ROOTDIR/images
 	cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
 }
