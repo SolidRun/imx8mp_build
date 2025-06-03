@@ -22,6 +22,8 @@ GIT_URL[mfgtools]=https://github.com/NXPmicro/mfgtools.git
 GIT_REL[ftpm]=master
 GIT_COMMIT[ftpm]=af2185656b0c47afc87b76fa89283bdf170e2759
 GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
+GIT_REL[isp-vvcam]=lf-6.6.y_2.2.0
+GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
 
 # Distribution for rootfs
 # - buildroot
@@ -95,7 +97,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -313,38 +315,30 @@ export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
-cd $ROOTDIR/build/linux-imx
-./scripts/kconfig/merge_config.sh arch/arm64/configs/imx_v8_defconfig $ROOTDIR/configs/kernel.extra
-make olddefconfig
-# make menuconfig
-make -j$(nproc) Image Image.gz dtbs modules
-make savedefconfig
-KRELEASE=`make kernelrelease`
-rm -rf $ROOTDIR/images/tmp/linux
-mkdir -p $ROOTDIR/images/tmp/linux
-mkdir -p $ROOTDIR/images/tmp/linux/boot/freescale
-make -j$(nproc) INSTALL_MOD_PATH=$ROOTDIR/images/tmp/linux/usr INSTALL_MOD_STRIP=1 modules_install
-cp $ROOTDIR/build/linux-imx/System.map $ROOTDIR/images/tmp/linux/boot
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image $ROOTDIR/images/tmp/linux/boot
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image.gz $ROOTDIR/images/tmp/linux/boot
-for prefix in cubox-m hummingboard sr-som; do
-	find $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/ -iname "imx8mp-${prefix}*.dtb*" -exec cp {} $ROOTDIR/images/tmp/linux/boot/freescale/ \;
-done
 
-# TODO: can build external modules here
-
-# regenerate modules dependencies
-depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
-
-function pkg_kernel() {
-# package kernel individually
-	rm -f "${ROOTDIR}/images/linux/linux.tar*"
-	cd "${ROOTDIR}/images/tmp/linux"; tar -c --owner=root:0 -f "${ROOTDIR}/images/linux-${REPO_PREFIX}.tar" boot/* usr/lib/modules/*; cd "${ROOTDIR}"
+function build_kernel() {
+	# compile kernel
+	cd $ROOTDIR/build/linux-imx
+	./scripts/kconfig/merge_config.sh arch/arm64/configs/imx_v8_defconfig $ROOTDIR/configs/kernel.extra
+	make olddefconfig
+	# make menuconfig
+	make -j$(nproc) Image Image.gz dtbs modules
+	make savedefconfig
+	KRELEASE=`make kernelrelease`
+	rm -rf $ROOTDIR/images/tmp/linux
+	mkdir -p $ROOTDIR/images/tmp/linux
+	mkdir -p $ROOTDIR/images/tmp/linux/boot/freescale
+	make -j$(nproc) INSTALL_MOD_PATH=$ROOTDIR/images/tmp/linux/usr INSTALL_MOD_STRIP=1 modules_install
+	cp $ROOTDIR/build/linux-imx/System.map $ROOTDIR/images/tmp/linux/boot
+	cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image $ROOTDIR/images/tmp/linux/boot
+	cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image.gz $ROOTDIR/images/tmp/linux/boot
+	for prefix in cubox-m hummingboard sr-som; do
+		find $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/ -iname "imx8mp-${prefix}*.dtb*" -exec cp {} $ROOTDIR/images/tmp/linux/boot/freescale/ \;
+	done
 }
-pkg_kernel
 
-function pkg_kernel_headers() {
-	# Build external Linux Headers package for compiling modules
+function build_kernel_headers() {
+	# Generate external linux headers for compiling modules
 	cd "${ROOTDIR}/build/linux-imx"
 	rm -rf "${ROOTDIR}/images/tmp/linux-headers"
 	mkdir -p ${ROOTDIR}/images/tmp/linux-headers
@@ -353,14 +347,45 @@ function pkg_kernel_headers() {
 	find arch/arm64/include include scripts -type f >> $tempfile
 	tar -c -f - -T $tempfile | tar -C "${ROOTDIR}/images/tmp/linux-headers" -xf -
 	cd "${ROOTDIR}/build/linux-imx"
-	find arch/arm64/include .config Module.symvers include scripts -type f > $tempfile
+	find arch/arm64/include .config Module.symvers include scripts System.map -type f > $tempfile
 	tar -c -f - -T $tempfile | tar -C "${ROOTDIR}/images/tmp/linux-headers" -xf -
 	rm -f $tempfile
 	unset tempfile
+}
+
+function pkg_kernel_headers() {
+	# package external linux headers
 	cd "${ROOTDIR}/images/tmp/linux-headers"
 	tar cpf "${ROOTDIR}/images/linux-headers-${REPO_PREFIX}.tar" *
 }
+
+function pkg_kernel() {
+	# package kernel and modules
+	rm -f "${ROOTDIR}/images/linux/linux.tar*"
+	cd "${ROOTDIR}/images/tmp/linux"; tar -c --owner=root:0 -f "${ROOTDIR}/images/linux-${REPO_PREFIX}.tar" boot/* usr/lib/modules/*; cd "${ROOTDIR}"
+}
+
+# build out of tree camera drivers
+function build_isp_vvcam() {
+	cd "${ROOTDIR}/build/isp-vvcam/vvcam/v4l2"
+	make KERNEL_SRC="${ROOTDIR}/images/tmp/linux-headers" clean
+	make -j$(nproc) KERNEL_SRC="${ROOTDIR}/images/tmp/linux-headers"
+	make -j$(nproc) KERNEL_SRC="${ROOTDIR}/images/tmp/linux-headers" INSTALL_MOD_PATH="$ROOTDIR/images/tmp/linux/usr" INSTALL_MOD_DIR=extra INSTALL_MOD_STRIP=1 modules_install
+}
+
+# compile kernel
+build_kernel
+
+# build external modules
+build_kernel_headers
+build_isp_vvcam
+
+# regenerate modules dependencies
+depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
+
+# generate packages
 pkg_kernel_headers
+pkg_kernel
 
 ###############################################################################
 # Building FS Buildroot/Debian
