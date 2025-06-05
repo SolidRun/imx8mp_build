@@ -33,7 +33,7 @@ GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
 ## Buildroot Options
 : ${BUILDROOT_VERSION:=2023.11}
 : ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
-: ${BUILDROOT_ROOTFS_SIZE:=192M}
+: ${BUILDROOT_ROOTFS_SIZE:=448M}
 : ${BR2_PRIMARY_SITE:=}
 ## Debian Options
 : ${DEBIAN_VERSION:=bullseye}

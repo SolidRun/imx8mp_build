@@ -25,7 +25,7 @@ The build script supports several customisation options that can be applied thro
 - `BUILDROOT_DEFCONFIG`: Select buildroot defconfig file name from `config/` folder
   - `buildroot_defconfig` (default)
 - `BUILDROOT_ROOTFS_SIZE`: Specify rootfs size
-  - `512M` (default)
+  - `448M` (default)
 - `BR2_PRIMARY_SITE`: Use specific (local) buildroot mirror
 - `DEBIAN_VERSION`
   - `bullseye` (default)
