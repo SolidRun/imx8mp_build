@@ -7,7 +7,7 @@ declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
-GIT_COMMIT[uboot-imx]=a31369d37a4b1c7c20ffe21cfefd41620d7c8e75
+GIT_COMMIT[uboot-imx]=21e6861ac4b59e4fed8d2ffd3dd3a23c3acbcf18
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
 GIT_COMMIT[linux-imx]=adfceb770b6a42b7fa2a9b37822dc84072de8195
@@ -510,7 +510,7 @@ DEFAULT default
 MENU TITLE SolidRun i.MX8MP Reference BSP
 LABEL default
 	MENU LABEL default
-	LINUX ../Image
+	LINUX ../Image.gz
 	FDTDIR ../
 	APPEND console=\${console} earlycon=ec_imx6q,0x30890000,115200 root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
 EOF
@@ -556,7 +556,7 @@ do_generate_extlinux ${ROOTDIR}/images/extlinux.conf ${IMG} 2
 
 mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
-mcopy -i tmp/part1.fat32 $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ::/Image
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/Image.gz ::/Image.gz
 mmd -i tmp/part1.fat32 ::/freescale
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb* ::/freescale
 
