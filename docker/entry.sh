@@ -26,6 +26,7 @@ if [ "x${FLAGS_uid}" != "x0" ]; then
 	useradd -s /bin/bash -u ${FLAGS_uid} -g ${FLAGS_gid} -m -G sudo build
 	echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 	user=build
+	HOME=/work
 fi
 
 # preconfigure git identity
