@@ -26,10 +26,11 @@ if [ "x${FLAGS_uid}" != "x0" ]; then
 	useradd -s /bin/bash -u ${FLAGS_uid} -g ${FLAGS_gid} -m -G sudo build
 	echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 	user=build
+	HOME=/work
 fi
 
 # preconfigure git identity
-GIT_DIR=/dev/null git config --system user.name "i.MX8MP Toolchain Container"
+GIT_DIR=/dev/null git config --system user.name "i.MX8MN Toolchain Container"
 GIT_DIR=/dev/null git config --system user.email "support@solid-run.com"
 
 cd /work
