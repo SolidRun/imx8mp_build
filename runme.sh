@@ -24,6 +24,8 @@ GIT_COMMIT[ftpm]=af2185656b0c47afc87b76fa89283bdf170e2759
 GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
 GIT_REL[isp-vvcam]=lf-6.6.y_2.2.0
 GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
+GIT_REL[cyw-fmac]=imx-kirkstone-jaculus
+GIT_URL[cyw-fmac]=https://github.com/murata-wireless/cyw-fmac.git
 
 # Distribution for rootfs
 # - buildroot
@@ -97,7 +99,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam cyw-fmac"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -373,12 +375,26 @@ function build_isp_vvcam() {
 	make -j$(nproc) KERNEL_SRC="${ROOTDIR}/images/tmp/linux-headers" INSTALL_MOD_PATH="$ROOTDIR/images/tmp/linux/usr" INSTALL_MOD_DIR=extra INSTALL_MOD_STRIP=1 modules_install
 }
 
+# Build cypress-backports wifi driver
+do_build_cyw_fmac() {
+	cd $ROOTDIR/build/cyw-fmac
+	make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" clean
+	make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" defconfig-brcmfmac
+	make -j$(nproc) KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" modules
+	#make -j$(nproc) KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/linux/usr" modules_install
+	find . -type f -name "*.ko" -exec install -v -m644 -D {} "${ROOTDIR}/images/tmp/linux/usr/lib/modules/${KRELEASE}/updates/{}" \;
+
+	# regenerate modules dependencies
+	depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
+}
+
 # compile kernel
 build_kernel
 
 # build external modules
 build_kernel_headers
 build_isp_vvcam
+do_build_cyw_fmac
 
 # regenerate modules dependencies
 depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}

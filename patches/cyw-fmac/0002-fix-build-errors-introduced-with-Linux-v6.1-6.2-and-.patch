@@ -1,0 +1,111 @@
+From d5b082d1aae4b167220db4512154981e6c83a623 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Tue, 14 Oct 2025 14:25:50 +0200
+Subject: [PATCH] fix build errors introduced with Linux v6.1, 6.2 and 6.3
+
+Tested with v6.6.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ backport-include/linux/prandom.h                 | 14 ++++++++++++++
+ .../wireless/broadcom/brcm80211/brcmfmac/sdio.c  |  1 +
+ net/wireless/nl80211.c                           | 16 +++++++++++++---
+ net/wireless/sysfs.c                             |  6 ++++++
+ 4 files changed, 34 insertions(+), 3 deletions(-)
+ create mode 100644 backport-include/linux/prandom.h
+
+diff --git a/backport-include/linux/prandom.h b/backport-include/linux/prandom.h
+new file mode 100644
+index 0000000..8710ecb
+--- /dev/null
++++ b/backport-include/linux/prandom.h
+@@ -0,0 +1,14 @@
++#ifndef __BACKPORT_PRANDOM_H
++#define __BACKPORT_PRANDOM_H
++#include_next <linux/prandom.h>
++#include <linux/version.h>
++
++#if !LINUX_VERSION_IS_LESS(6,2,0)
++/* removed with v6.2 */
++static inline u32 prandom_u32_max(u32 ep_ro)
++{
++	return get_random_u32_below(ep_ro);
++}
++#endif
++
++#endif /* __BACKPORT_PRANDOM_H */
+diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+index aa26e9a..db9f45e 100644
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -32,6 +32,7 @@
+ #include <brcmu_utils.h>
+ #include <brcm_hw_ids.h>
+ #include <soc.h>
++#include <uapi/linux/sched/types.h>	/* For struct sched_param */
+ #include "sdio.h"
+ #include "chip.h"
+ #include "firmware.h"
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index ee6862f..b0aa6e8 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -16189,7 +16189,12 @@ static u32 nl80211_internal_flags[] = {
+ #undef SELECTOR
+ };
+ 
+-static int nl80211_pre_doit(const struct genl_ops *ops, struct sk_buff *skb,
++#if LINUX_VERSION_IS_LESS(6,1,0)
++static int nl80211_pre_doit(const struct genl_ops *ops,
++#else
++static int nl80211_pre_doit(const struct genl_split_ops *ops,
++#endif
++			    struct sk_buff *skb,
+ 			    struct genl_info *info)
+ {
+ 	struct cfg80211_registered_device *rdev = NULL;
+@@ -16290,8 +16295,13 @@ out_unlock:
+ 	return err;
+ }
+ 
+-static void nl80211_post_doit(const struct genl_ops *ops, struct sk_buff *skb,
+-			      struct genl_info *info)
++#if LINUX_VERSION_IS_LESS(6,1,0)
++static void nl80211_post_doit(const struct genl_ops *ops,
++#else
++static void nl80211_post_doit(const struct genl_split_ops *ops,
++#endif
++			    struct sk_buff *skb,
++			    struct genl_info *info)
+ {
+ 	u32 internal_flags = nl80211_internal_flags[ops->internal_flags];
+ 
+diff --git a/net/wireless/sysfs.c b/net/wireless/sysfs.c
+index 68fc8e3..185f81e 100644
+--- a/net/wireless/sysfs.c
++++ b/net/wireless/sysfs.c
+@@ -162,7 +162,11 @@ static SIMPLE_DEV_PM_OPS(wiphy_pm_ops, wiphy_suspend, wiphy_resume);
+ #define WIPHY_PM_OPS NULL
+ #endif
+ 
++#if LINUX_VERSION_IS_LESS(6,1,0)
+ static const void *wiphy_namespace(struct device *d)
++#else
++static const void *wiphy_namespace(const struct device *d)
++#endif
+ {
+ 	struct wiphy *wiphy = container_of(d, struct wiphy, dev);
+ 
+@@ -171,7 +175,9 @@ static const void *wiphy_namespace(struct device *d)
+ 
+ struct class ieee80211_class = {
+ 	.name = "ieee80211",
++#if LINUX_VERSION_IS_LESS(6,3,0)
+ 	.owner = THIS_MODULE,
++#endif
+ 	.dev_release = wiphy_dev_release,
+ 	.dev_groups = ieee80211_groups,
+ 	.pm = WIPHY_PM_OPS,
+-- 
+2.51.0
+
