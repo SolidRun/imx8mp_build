@@ -10,7 +10,7 @@ GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
 GIT_COMMIT[uboot-imx]=9b3315107afbd588392421da710f8a6339336475
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
-GIT_COMMIT[linux-imx]=4beeaf0e1d5c3ffc848f31e0f2c7077765f3e05f
+GIT_COMMIT[linux-imx]=009834fcd03cf28e9e0282197776e0e35dff751a
 GIT_URL[linux-imx]=https://github.com/SolidRun/linux-stable.git
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
@@ -24,8 +24,6 @@ GIT_COMMIT[ftpm]=af2185656b0c47afc87b76fa89283bdf170e2759
 GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
 GIT_REL[isp-vvcam]=lf-6.6.y_2.2.0
 GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
-GIT_REL[cyw-fmac]=imx-kirkstone-jaculus
-GIT_URL[cyw-fmac]=https://github.com/murata-wireless/cyw-fmac.git
 
 # Distribution for rootfs
 # - buildroot
@@ -99,7 +97,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam cyw-fmac"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -375,26 +373,12 @@ function build_isp_vvcam() {
 	make -j$(nproc) KERNEL_SRC="${ROOTDIR}/images/tmp/linux-headers" INSTALL_MOD_PATH="$ROOTDIR/images/tmp/linux/usr" INSTALL_MOD_DIR=extra INSTALL_MOD_STRIP=1 modules_install
 }
 
-# Build cypress-backports wifi driver
-do_build_cyw_fmac() {
-	cd $ROOTDIR/build/cyw-fmac
-	make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" clean
-	make KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" defconfig-brcmfmac
-	make -j$(nproc) KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" modules
-	#make -j$(nproc) KLIB_BUILD="${ROOTDIR}/images/tmp/linux-headers" INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/linux/usr" modules_install
-	find . -type f -name "*.ko" -exec install -v -m644 -D {} "${ROOTDIR}/images/tmp/linux/usr/lib/modules/${KRELEASE}/updates/{}" \;
-
-	# regenerate modules dependencies
-	depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
-}
-
 # compile kernel
 build_kernel
 
 # build external modules
 build_kernel_headers
 build_isp_vvcam
-do_build_cyw_fmac
 
 # regenerate modules dependencies
 depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
