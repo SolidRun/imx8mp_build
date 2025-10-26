@@ -322,6 +322,22 @@ function build_kernel() {
 	./scripts/kconfig/merge_config.sh arch/arm64/configs/imx_v8_defconfig $ROOTDIR/configs/kernel.extra
 	make olddefconfig
 	# make menuconfig
+	CHECK_DTBS=(
+		freescale/imx8mp-cubox-m.dtb
+		freescale/imx8mp-hummingboard-iiot.dtb
+		freescale/imx8mp-hummingboard-iiot-panel-dsi-WJ70N3TYJHMNG0.dtbo
+		freescale/imx8mp-hummingboard-iiot-panel-lvds-WF70A8SYJHLNGA.dtbo
+		freescale/imx8mp-hummingboard-iiot-rs485-a.dtbo
+		freescale/imx8mp-hummingboard-iiot-rs485-b.dtbo
+		freescale/imx8mp-hummingboard-mate.dtb
+		freescale/imx8mp-hummingboard-pro.dtb
+		freescale/imx8mp-hummingboard-pulse.dtb
+		freescale/imx8mp-hummingboard-pulse-basler.dtbo
+		freescale/imx8mp-hummingboard-ripple.dtb
+		freescale/imx8mp-solidsense-aiot.dtb
+		freescale/imx8mp-sr-som-basler.dtbo
+	)
+	make -j$(nproc) CHECK_DTBS=1 ${CHECK_DTBS[@]}
 	make -j$(nproc) Image Image.gz dtbs modules
 	make savedefconfig
 	KRELEASE=`make kernelrelease`
