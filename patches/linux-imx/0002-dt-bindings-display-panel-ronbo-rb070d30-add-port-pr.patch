@@ -1,0 +1,29 @@
+From e4a13cbcc974922d5911957342e6b0eaaf9e5299 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sun, 26 Oct 2025 17:00:55 +0100
+Subject: [PATCH 2/7] dt-bindings: display: panel: ronbo,rb070d30: add port
+ property
+
+port property is used for linking dsi ports with dsi panels.
+Add port property to ronbo dsi panel binding.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ .../devicetree/bindings/display/panel/ronbo,rb070d30.yaml        | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/display/panel/ronbo,rb070d30.yaml b/Documentation/devicetree/bindings/display/panel/ronbo,rb070d30.yaml
+index 04f86e0cbac9..a2dc67a87fa3 100644
+--- a/Documentation/devicetree/bindings/display/panel/ronbo,rb070d30.yaml
++++ b/Documentation/devicetree/bindings/display/panel/ronbo,rb070d30.yaml
+@@ -13,6 +13,7 @@ properties:
+   compatible:
+     const: ronbo,rb070d30
+ 
++  port: true
+   reg:
+     maxItems: 1
+ 
+-- 
+2.51.0
+

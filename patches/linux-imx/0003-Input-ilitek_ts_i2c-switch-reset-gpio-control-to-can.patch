@@ -1,0 +1,39 @@
+From d76c3c01ad7dcc6aef0b84ed90c81ec9a89c10c2 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sun, 26 Oct 2025 18:05:33 +0100
+Subject: [PATCH 3/7] Input: ilitek_ts_i2c: switch reset gpio control to
+ can_sleep variant
+
+The ilitek touchscreen driver uses the non-sleeping gpiod_set_value
+function for reset.
+
+When the connected gpio controller needs to sleep as is common for i2c
+based expanders, this causes noisy complaints in kernel log.
+
+Reset is not time-critical, switch to the gpiod_set_value_cansleep
+variant.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ drivers/input/touchscreen/ilitek_ts_i2c.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/input/touchscreen/ilitek_ts_i2c.c b/drivers/input/touchscreen/ilitek_ts_i2c.c
+index 0dd632724a00..8c5a54b33681 100644
+--- a/drivers/input/touchscreen/ilitek_ts_i2c.c
++++ b/drivers/input/touchscreen/ilitek_ts_i2c.c
+@@ -396,9 +396,9 @@ static const struct ilitek_protocol_map ptl_func_map[] = {
+ static void ilitek_reset(struct ilitek_ts_data *ts, int delay)
+ {
+ 	if (ts->reset_gpio) {
+-		gpiod_set_value(ts->reset_gpio, 1);
++		gpiod_set_value_cansleep(ts->reset_gpio, 1);
+ 		mdelay(10);
+-		gpiod_set_value(ts->reset_gpio, 0);
++		gpiod_set_value_cansleep(ts->reset_gpio, 0);
+ 		mdelay(delay);
+ 	}
+ }
+-- 
+2.51.0
+

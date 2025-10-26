@@ -1,0 +1,29 @@
+From 0a6aef872a56f82ec19bdc6db8a96aac70db07c6 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sun, 26 Oct 2025 15:17:27 +0100
+Subject: [PATCH 1/7] dt-bindings: arm: fsl: Add binding for SolidRun i.MX8MP
+ HB-IIoT
+
+Add binding for SolidRun i.MX8MP HummingBoard IIoT which is designed
+for the i.MX8MP System on Module.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ Documentation/devicetree/bindings/arm/fsl.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/fsl.yaml b/Documentation/devicetree/bindings/arm/fsl.yaml
+index 00cdf490b062..2f8ab5a6556f 100644
+--- a/Documentation/devicetree/bindings/arm/fsl.yaml
++++ b/Documentation/devicetree/bindings/arm/fsl.yaml
+@@ -1205,6 +1205,7 @@ properties:
+         items:
+           - enum:
+               - solidrun,imx8mp-cubox-m             # SolidRun i.MX8MP SoM on CuBox-M
++              - solidrun,imx8mp-hummingboard-iiot   # SolidRun i.MX8MP SoM on HummingBoard IIoT
+               - solidrun,imx8mp-hummingboard-mate   # SolidRun i.MX8MP SoM on HummingBoard Mate
+               - solidrun,imx8mp-hummingboard-pro    # SolidRun i.MX8MP SoM on HummingBoard Pro
+               - solidrun,imx8mp-hummingboard-pulse  # SolidRun i.MX8MP SoM on HummingBoard Pulse
+-- 
+2.51.0
+

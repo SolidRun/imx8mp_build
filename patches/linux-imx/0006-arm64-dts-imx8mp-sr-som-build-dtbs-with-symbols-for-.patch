@@ -1,0 +1,47 @@
+From ed578d8dbb63c918a732c9c5fae09abe52ca04df Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sun, 26 Oct 2025 16:18:44 +0100
+Subject: [PATCH 6/7] arm64: dts: imx8mp-sr-som: build dtbs with symbols for
+ overlay support
+
+Build all dtbs based on SolidRun i.MX8MP SoM with symbols (adding -@ to
+dtc flags) to enable support for device-tree addons.
+
+The SoM has a camera connector for basler cameras that can be enabled by
+downstream dtbo.
+Hence by extension all boards based on this SoM should support addons.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ arch/arm64/boot/dts/freescale/Makefile | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
+index 525ef180481d..8bda6fb0ff9c 100644
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -197,6 +197,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mp-aristainetos3-helios-lvds.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-aristainetos3-proton2s.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-beacon-kit.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-cubox-m.dtb
++DTC_FLAGS_imx8mp-cubox-m := -@
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-data-modul-edm-sbc.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-debix-model-a.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-debix-som-a-bmb-08.dtb
+@@ -207,9 +208,13 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mp-dhcom-picoitx.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-edm-g-wb.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-evk.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-hummingboard-mate.dtb
++DTC_FLAGS_imx8mp-hummingboard-mate := -@
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-hummingboard-pro.dtb
++DTC_FLAGS_imx8mp-hummingboard-pro := -@
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-hummingboard-pulse.dtb
++DTC_FLAGS_imx8mp-hummingboard-pulse := -@
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-hummingboard-ripple.dtb
++DTC_FLAGS_imx8mp-hummingboard-ripple := -@
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-icore-mx8mp-edimm2.2.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-iota2-lumpy.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-kontron-bl-osm-s.dtb
+-- 
+2.51.0
+

@@ -1,0 +1,51 @@
+From 0ffc502cbda57ce7fc6012370976a1794035f897 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Thu, 26 Jun 2025 10:28:22 +0300
+Subject: [PATCH 4/7] drm/panel: ronbo-rb070d30: fix warning with gpio
+ controllers that sleep
+
+The ronbo-rb070d30 controles the various gpios for reset, standby,
+vertical and horizontal flip using the non-sleeping gpiod_set_value()
+function.
+
+When the connected gpio controller needs to sleep as is common for i2c
+based expanders, this causes noisy complaints in kernel log.
+
+Control of these gpios is not time-critical, switch to the
+gpiod_set_value_cansleep() variant.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ drivers/gpu/drm/panel/panel-ronbo-rb070d30.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/gpu/drm/panel/panel-ronbo-rb070d30.c b/drivers/gpu/drm/panel/panel-ronbo-rb070d30.c
+index ad35d0fb0a16..c3fbc459c7e0 100644
+--- a/drivers/gpu/drm/panel/panel-ronbo-rb070d30.c
++++ b/drivers/gpu/drm/panel/panel-ronbo-rb070d30.c
+@@ -54,9 +54,9 @@ static int rb070d30_panel_prepare(struct drm_panel *panel)
+ 	}
+ 
+ 	msleep(20);
+-	gpiod_set_value(ctx->gpios.power, 1);
++	gpiod_set_value_cansleep(ctx->gpios.power, 1);
+ 	msleep(20);
+-	gpiod_set_value(ctx->gpios.reset, 1);
++	gpiod_set_value_cansleep(ctx->gpios.reset, 1);
+ 	msleep(20);
+ 	return 0;
+ }
+@@ -65,8 +65,8 @@ static int rb070d30_panel_unprepare(struct drm_panel *panel)
+ {
+ 	struct rb070d30_panel *ctx = panel_to_rb070d30_panel(panel);
+ 
+-	gpiod_set_value(ctx->gpios.reset, 0);
+-	gpiod_set_value(ctx->gpios.power, 0);
++	gpiod_set_value_cansleep(ctx->gpios.reset, 0);
++	gpiod_set_value_cansleep(ctx->gpios.power, 0);
+ 	regulator_disable(ctx->supply);
+ 
+ 	return 0;
+-- 
+2.51.0
+

@@ -1,0 +1,46 @@
+From 78a5133d01aab06d5a6e99c0b3c8cd4e73481a30 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Thu, 19 Jun 2025 10:45:04 +0300
+Subject: [PATCH 5/7] arm64: dts: imx8mp-hummingboard-pulse/cubox-m: fix vmmc
+ gpio polarity
+
+Fix the polarity in vmmc regulator node for the gpio from active-high to
+active-low. This is a cosmetic change as regulator default to active-low
+unless property enable-active-high was also specified - ignoring the
+flag on gpio handle.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-cubox-m.dts                | 2 +-
+ .../boot/dts/freescale/imx8mp-hummingboard-pulse-common.dtsi    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-cubox-m.dts b/arch/arm64/boot/dts/freescale/imx8mp-cubox-m.dts
+index 8290f187b79f..7bc213499f09 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-cubox-m.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-cubox-m.dts
+@@ -68,7 +68,7 @@ vmmc: regulator-mmc {
+ 		regulator-name = "vmmc";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+-		gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++		gpio = <&gpio2 19 GPIO_ACTIVE_LOW>;
+ 		startup-delay-us = <250>;
+ 	};
+ };
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse-common.dtsi b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse-common.dtsi
+index 825ad6a2ba14..5b8c8489713c 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse-common.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-pulse-common.dtsi
+@@ -73,7 +73,7 @@ vmmc: regulator-mmc {
+ 		regulator-name = "vmmc";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+-		gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++		gpio = <&gpio2 19 GPIO_ACTIVE_LOW>;
+ 		startup-delay-us = <250>;
+ 	};
+ 
+-- 
+2.51.0
+
