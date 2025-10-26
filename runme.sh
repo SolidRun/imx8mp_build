@@ -203,6 +203,10 @@ function build_kernel() {
 	./scripts/kconfig/merge_config.sh arch/arm64/configs/imx_v8_defconfig $ROOTDIR/configs/kernel.extra
 	make olddefconfig
 	# make menuconfig
+	CHECK_DTBS=(
+		freescale/imx8mn-solidsense-n8-compact.dtb
+	)
+	make -j$(nproc) CHECK_DTBS=1 ${CHECK_DTBS[@]}
 	make -j$(nproc) Image Image.gz dtbs modules
 	make savedefconfig
 	KRELEASE=`make kernelrelease`
