@@ -13,8 +13,11 @@ RUN set -e; \
 
 RUN set -e; \
 	apt-get update; \
-	apt-get -y install --no-install-recommends kmod libgnutls28-dev uuid-dev bc bison build-essential ca-certificates cmake cpio crossbuild-essential-armhf crossbuild-essential-arm64 device-tree-compiler dosfstools e2tools file flex fuseext2 g++ gcc git libbz2-dev libncurses-dev libssl-dev libusb-1.0-0-dev libzip-dev make meson mtools multistrap ninja-build p7zip p7zip-full pandoc parted pkg-config python3 python3-cryptography python3-pyelftools qemu-system-arm rsync squashfs-tools sudo tar u-boot-tools unzip wget xz-utils zlib1g-dev fakeroot debootstrap ; \
+	apt-get -y install --no-install-recommends kmod libgnutls28-dev uuid-dev bc bison build-essential ca-certificates cmake cpio crossbuild-essential-armhf crossbuild-essential-arm64 device-tree-compiler dosfstools e2tools file flex fuseext2 g++ gcc git libbz2-dev libncurses-dev libssl-dev libusb-1.0-0-dev libzip-dev make meson mtools multistrap ninja-build p7zip p7zip-full pandoc parted pkg-config python3 python3-cryptography python3-pyelftools qemu-system-arm rsync squashfs-tools sudo tar u-boot-tools unzip wget xz-utils zlib1g-dev fakeroot debootstrap pipx libfdt-dev python3-dev ; \
 	:
+
+ENV PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin
+RUN pipx install dtschema
 
 # build environment
 WORKDIR /work
