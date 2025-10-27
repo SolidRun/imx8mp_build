@@ -9,9 +9,8 @@ GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
 GIT_COMMIT[uboot-imx]=a820407959a9e6c086704e3e1ebc26ee7745927b
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
-GIT_REL[linux-imx]=lf-6.6-sr-imx8
-GIT_COMMIT[linux-imx]=009834fcd03cf28e9e0282197776e0e35dff751a
-GIT_URL[linux-imx]=https://github.com/SolidRun/linux-stable.git
+GIT_REL[linux-imx]=v6.18-rc1
+GIT_URL[linux-imx]=https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux.git
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
 PKG_VER[firmware-imx]=8.26-d4c33ab
@@ -200,7 +199,7 @@ echo "================================="
 function build_kernel() {
 	# compile kernel
 	cd $ROOTDIR/build/linux-imx
-	./scripts/kconfig/merge_config.sh arch/arm64/configs/imx_v8_defconfig $ROOTDIR/configs/kernel.extra
+	./scripts/kconfig/merge_config.sh arch/arm64/configs/defconfig $ROOTDIR/configs/kernel.extra
 	make olddefconfig
 	# make menuconfig
 	CHECK_DTBS=(

@@ -1,0 +1,29 @@
+From 66ee502fc39b91b28afeebe95edde99822f1a6b2 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sun, 26 Oct 2025 22:14:35 +0100
+Subject: [PATCH 1/2] dt-bindings: arm: fsl: Add binding for SolidRun
+ SolidSense N8
+
+Add binding for SolidRun SolidSense N8 Compact board based on i.MX8M
+Nano SoC.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ Documentation/devicetree/bindings/arm/fsl.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/fsl.yaml b/Documentation/devicetree/bindings/arm/fsl.yaml
+index 00cdf490b062..4746b82c3570 100644
+--- a/Documentation/devicetree/bindings/arm/fsl.yaml
++++ b/Documentation/devicetree/bindings/arm/fsl.yaml
+@@ -1069,6 +1069,7 @@ properties:
+               - fsl,imx8mn-ddr4-evk       # i.MX8MN DDR4 EVK Board
+               - fsl,imx8mn-evk            # i.MX8MN LPDDR4 EVK Board
+               - gw,imx8mn-gw7902          # i.MX8MM Gateworks Board
++              - solidrun,solidsense-n8-compact # SolidRun SolidSense N8 Compact
+           - const: fsl,imx8mn
+ 
+       - description: Variscite VAR-SOM-MX8MN based boards
+-- 
+2.51.0
+
