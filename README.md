@@ -30,3 +30,7 @@ This project is organised in branches for different BSP versions, organised per 
 
   Based on NXP i.MX Linux SDK version 5.15.71-2.2.2 and 6.1.1-1.0.0, featuring U-Boot v2022.04 and Linux v5.15.
   This version is considered stable and maintained with bug fixes only.
+
+- [develop-upstream-imx8mn](https://github.com/SolidRun/imx8mp_build/tree/develop-upstream-imx8mn):
+
+  Development version for upstream purposes. Unstable by nature, not supported.
