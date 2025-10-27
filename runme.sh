@@ -7,7 +7,7 @@ declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
-GIT_COMMIT[uboot-imx]=9b3315107afbd588392421da710f8a6339336475
+GIT_COMMIT[uboot-imx]=a820407959a9e6c086704e3e1ebc26ee7745927b
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
 GIT_COMMIT[linux-imx]=009834fcd03cf28e9e0282197776e0e35dff751a
