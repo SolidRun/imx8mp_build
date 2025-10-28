@@ -24,6 +24,9 @@ GIT_COMMIT[ftpm]=af2185656b0c47afc87b76fa89283bdf170e2759
 GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
 GIT_REL[isp-vvcam]=lf-6.6.y_2.2.0
 GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
+GIT_REL[tac5x1x-linux-driver]=tac5x1x_driver_k5.15
+GIT_COMMIT[tac5x1x-linux-driver]=7fc10d15919d3054b8155bcb1cbfd7ee5c855c83
+GIT_URL[tac5x1x-linux-driver]=https://git.ti.com/git/lpaa-android-drivers/tac5x1x-linux-driver.git
 
 # Distribution for rootfs
 # - buildroot
@@ -97,7 +100,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam tac5x1x-linux-driver"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -389,12 +392,21 @@ function build_isp_vvcam() {
 	make -j$(nproc) KERNEL_SRC="${ROOTDIR}/images/tmp/linux-headers" INSTALL_MOD_PATH="$ROOTDIR/images/tmp/linux/usr" INSTALL_MOD_DIR=extra INSTALL_MOD_STRIP=1 modules_install
 }
 
+# build out of tree audio codec driver
+function build_tac5x1x() {
+	cd "${ROOTDIR}/build/tac5x1x-linux-driver"
+	make -C "${ROOTDIR}/images/tmp/linux-headers" M="$PWD" clean
+	make -j$(nproc) -C "${ROOTDIR}/images/tmp/linux-headers" M="$PWD"
+	make -j$(nproc) -C "${ROOTDIR}/images/tmp/linux-headers" M="$PWD" INSTALL_MOD_PATH="$ROOTDIR/images/tmp/linux/usr" INSTALL_MOD_DIR=extra INSTALL_MOD_STRIP=1 modules_install
+}
+
 # compile kernel
 build_kernel
 
 # build external modules
 build_kernel_headers
 build_isp_vvcam
+build_tac5x1x
 
 # regenerate modules dependencies
 depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}

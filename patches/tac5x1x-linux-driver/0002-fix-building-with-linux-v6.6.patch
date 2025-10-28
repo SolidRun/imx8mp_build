@@ -1,0 +1,61 @@
+From cab4dcd6680150aa800df3f63c01f5a933b16679 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Tue, 28 Oct 2025 15:29:54 +0100
+Subject: [PATCH 2/2] fix building with linux v6.6
+
+Add preprocessor macros supporting changed probe and remove callbacks
+with Linux v6.6.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ src/tac5x1x-i2c.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/src/tac5x1x-i2c.c b/src/tac5x1x-i2c.c
+index 358afd1..f9812c3 100644
+--- a/src/tac5x1x-i2c.c
++++ b/src/tac5x1x-i2c.c
+@@ -22,6 +22,7 @@
+ #include <linux/i2c.h>
+ #include <linux/bitops.h>
+ #include <linux/workqueue.h>
++#include <linux/version.h>
+ 
+ #include "tac5x1x.h"
+ 
+@@ -2340,9 +2341,15 @@ static const struct i2c_device_id tac5x1x_id[] = {
+ };
+ MODULE_DEVICE_TABLE(i2c, tac5x1x_id);
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
++static int tac5x1x_i2c_probe(struct i2c_client *i2c)
++{
++	const struct i2c_device_id *id = i2c_client_get_device_id(i2c);
++#else
+ static int tac5x1x_i2c_probe(struct i2c_client *i2c,
+ 			     const struct i2c_device_id *id)
+ {
++#endif
+ 	int ret;
+ 	enum tac5x1x_type type;
+ 	struct regmap *regmap;
+@@ -2358,10 +2365,16 @@ static int tac5x1x_i2c_probe(struct i2c_client *i2c,
+ 	return ret;
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
++static void tac5x1x_i2c_remove(struct i2c_client *client)
++#else
+ static int tac5x1x_i2c_remove(struct i2c_client *client)
++#endif
+ {
+ 	tac5x1x_remove(&client->dev);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)
+ 	return 0;
++#endif
+ }
+ 
+ static struct i2c_driver tac5x1x_i2c_driver = {
+-- 
+2.51.0
+
