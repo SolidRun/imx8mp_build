@@ -348,7 +348,7 @@ function build_kernel() {
 	cp $ROOTDIR/build/linux-imx/System.map $ROOTDIR/images/tmp/linux/boot
 	cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image $ROOTDIR/images/tmp/linux/boot
 	cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image.gz $ROOTDIR/images/tmp/linux/boot
-	for prefix in cubox-m hummingboard sr-som; do
+	for prefix in cubox-m hummingboard solidsense sr-som; do
 		find $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/ -iname "imx8mp-${prefix}*.dtb*" -exec cp {} $ROOTDIR/images/tmp/linux/boot/freescale/ \;
 	done
 }
