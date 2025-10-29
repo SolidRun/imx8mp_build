@@ -7,7 +7,7 @@ declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
-GIT_COMMIT[uboot-imx]=a820407959a9e6c086704e3e1ebc26ee7745927b
+GIT_COMMIT[uboot-imx]=28edafff0b0c8f4493590079746650a2b8dab271
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
 GIT_COMMIT[linux-imx]=009834fcd03cf28e9e0282197776e0e35dff751a
@@ -61,6 +61,10 @@ GIT_URL[tac5x1x-linux-driver]=https://git.ti.com/git/lpaa-android-drivers/tac5x1
 # - nv_counter_incr_ree_fs_to
 # Not implemented.
 : ${OPTEE_STORAGE_PRIVATE_REE:=false}
+
+# intiial dtb for u-boot
+# used before board identification, and when identification fails
+: ${UBOOT_FDT:=imx8mp-cubox-m}
 
 ROOTDIR=`pwd`
 
@@ -264,6 +268,8 @@ do_build_uboot() {
 	cd $ROOTDIR/build/uboot-imx
 	./scripts/kconfig/merge_config.sh configs/imx8mp_solidrun_defconfig $ROOTDIR/configs/uboot.extra
 
+	printf "CONFIG_DEFAULT_DEVICE_TREE=\"%s\"\n" "${UBOOT_FDT}" >> .config || true
+
 	if [ "x${BOOTSOURCE}" = "xmmc-data" ];  then
 		# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
 cat >> .config << EOF
@@ -305,7 +311,7 @@ do_build_imximage() {
 	unset ARCH CROSS_COMPILE
 	cd $ROOTDIR/build/imx-mkimage
 	make clean
-	make SOC=iMX8MP dtbs=imx8mp-cubox-m.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-iiot.dtb imx8mp-hummingboard-mate.dtb imx8mp-hummingboard-pro.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
+	make SOC=iMX8MP dtbs=${UBOOT_FDT}.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-iiot.dtb imx8mp-hummingboard-mate.dtb imx8mp-hummingboard-pro.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
 	mkdir -p $ROOTDIR/images
 	cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
 }

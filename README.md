@@ -35,6 +35,9 @@ The build script supports several customisation options that can be applied thro
   - `true` (default)
 - `OPTEE_STORAGE_PRIVATE_REE`: enable optee-os secure storage with insecure real-world fs
   - `false` (default)
+- `UBOOT_FDT`: select initial dtb for bootloader before board identification
+  - `uboot-imx/arch/arm/dts/*.dts` any dts in this location can be selected by basename
+  - `imx8mp-cubox-m` (default)
 
 #### Example
    generating buildroot image
