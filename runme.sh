@@ -25,8 +25,8 @@ GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
 GIT_REL[isp-vvcam]=lf-6.6.y_2.2.0
 GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
 GIT_REL[tac5x1x-linux-driver]=tac5x1x_driver_k5.15
-GIT_COMMIT[tac5x1x-linux-driver]=7fc10d15919d3054b8155bcb1cbfd7ee5c855c83
-GIT_URL[tac5x1x-linux-driver]=https://git.ti.com/git/lpaa-android-drivers/tac5x1x-linux-driver.git
+GIT_COMMIT[tac5x1x-linux-driver]=37a0cf7cc2a3bfdc654f99058858e9e3dc38167f
+GIT_URL[tac5x1x-linux-driver]=https://github.com/SolidRun/tac5x1x-linux-driver.git
 
 # Distribution for rootfs
 # - buildroot
