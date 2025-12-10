@@ -525,6 +525,8 @@ EOF
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
 	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
+	# apply symbolic links as hard links (because e2ln does not support symbolic)
+	find "${ROOTDIR}/overlay/${DISTRO}" -type l -printf "${ROOTDIR}/images/tmp/rootfs.ext4:%h/%l\0%p\0" | sed -e " s;${ROOTDIR}/overlay/${DISTRO};;g" | xargs -0n 2 e2ln
 }
 
 # BUILD selected Distro buildroot/debian
