@@ -10,7 +10,7 @@ GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
 GIT_COMMIT[uboot-imx]=7ee00406e63caa4d9176e8a337621fd9b82f68a5
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
-GIT_COMMIT[linux-imx]=008c029474ad71213e40609d44fb16d8a5ba3eca
+GIT_COMMIT[linux-imx]=0d3d25a6c8f20d00480843b087bb8c18c4ab5ab7
 GIT_URL[linux-imx]=https://github.com/SolidRun/linux-stable.git
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
@@ -346,7 +346,7 @@ function build_kernel() {
 		freescale/imx8mp-solidsense-aiot.dtb
 		freescale/imx8mp-sr-som-basler.dtbo
 	)
-	make -j$(nproc) CHECK_DTBS=1 ${CHECK_DTBS[@]}
+	make -j$(nproc) -k CHECK_DTBS=1 ${CHECK_DTBS[@]} || true
 	make -j$(nproc) Image Image.gz dtbs modules
 	make savedefconfig
 	KRELEASE=`make kernelrelease`
