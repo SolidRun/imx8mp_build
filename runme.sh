@@ -10,7 +10,7 @@ GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
 GIT_COMMIT[uboot-imx]=7ee00406e63caa4d9176e8a337621fd9b82f68a5
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
-GIT_COMMIT[linux-imx]=0d3d25a6c8f20d00480843b087bb8c18c4ab5ab7
+GIT_COMMIT[linux-imx]=503225cbdb1909aeb70db297fdca47c1cd4939e5
 GIT_URL[linux-imx]=https://github.com/SolidRun/linux-stable.git
 GIT_REL[imx-mkimage]=lf-6.6.52-2.2.0
 GIT_URL[imx-mkimage]=https://github.com/nxp-imx/imx-mkimage.git
@@ -25,7 +25,7 @@ GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
 GIT_REL[isp-vvcam]=lf-6.6.y_2.2.0
 GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
 GIT_REL[tac5x1x-linux-driver]=tac5x1x_driver_k5.15
-GIT_COMMIT[tac5x1x-linux-driver]=37a0cf7cc2a3bfdc654f99058858e9e3dc38167f
+GIT_COMMIT[tac5x1x-linux-driver]=8c4ed6d5893a61f88c2d3cb8822831bb06d98b6f
 GIT_URL[tac5x1x-linux-driver]=https://github.com/SolidRun/tac5x1x-linux-driver.git
 
 # Distribution for rootfs
