@@ -344,6 +344,7 @@ function build_kernel() {
 		freescale/imx8mp-hummingboard-pulse-basler.dtbo
 		freescale/imx8mp-hummingboard-ripple.dtb
 		freescale/imx8mp-solidsense-aiot.dtb
+		freescale/imx8mp-solidsense-aiot-addon-flash-card.dtbo
 		freescale/imx8mp-sr-som-basler.dtbo
 	)
 	make -j$(nproc) -k CHECK_DTBS=1 ${CHECK_DTBS[@]} || true
