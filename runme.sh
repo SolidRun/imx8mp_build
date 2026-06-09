@@ -289,7 +289,7 @@ make -j$(nproc) Image dtbs
 rm -rf ${ROOTDIR}/images/tmp/linux
 mkdir -p ${ROOTDIR}/images/tmp/linux/boot/freescale
 cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image ${ROOTDIR}/images/tmp/linux/boot/Image
-cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb ${ROOTDIR}/images/tmp/linux/boot/freescale/
+cp $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/*imx8mp*.dtb* ${ROOTDIR}/images/tmp/linux/boot/freescale/
 cp -v System.map ${ROOTDIR}/images/tmp/linux/boot/
 cp -v .config ${ROOTDIR}/images/tmp/linux/boot/config
 if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
@@ -522,7 +522,7 @@ mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/Image ::/Image
 mmd -i tmp/part1.fat32 ::/freescale
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb ::/freescale
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb* ::/freescale
 if [ "x$DISTRO" == "xbuildroot" ]; then
        mcopy -s -i tmp/part1.fat32 $ROOTDIR/build/buildroot/output/images/rootfs.cpio.uboot ::/
 fi
