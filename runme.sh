@@ -62,7 +62,7 @@ GIT_URL[tac5x1x-linux-driver]=https://github.com/SolidRun/tac5x1x-linux-driver.g
 # Not implemented.
 : ${OPTEE_STORAGE_PRIVATE_REE:=false}
 
-# intiial dtb for u-boot
+# initial dtb for u-boot
 # used before board identification, and when identification fails
 : ${UBOOT_FDT:=imx8mp-cubox-m}
 
@@ -275,7 +275,6 @@ do_build_uboot() {
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
 CONFIG_SYS_MMC_ENV_PART=0
-CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x300
 EOF
 	fi
 	if [ "x${BOOTSOURCE}" = "xmmc-boot0" ];  then
@@ -283,7 +282,6 @@ EOF
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
 CONFIG_SYS_MMC_ENV_PART=1
-CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
 EOF
 	fi
 	if [ "x${BOOTSOURCE}" = "xmmc-boot1" ];  then
@@ -291,7 +289,6 @@ EOF
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
 CONFIG_SYS_MMC_ENV_PART=2
-CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
 EOF
 	fi
 
