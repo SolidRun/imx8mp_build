@@ -7,7 +7,7 @@ declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
-GIT_COMMIT[uboot-imx]=a820407959a9e6c086704e3e1ebc26ee7745927b
+GIT_COMMIT[uboot-imx]=28edafff0b0c8f4493590079746650a2b8dab271
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=v6.18-rc1
 GIT_URL[linux-imx]=https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux.git
@@ -23,6 +23,9 @@ GIT_COMMIT[ftpm]=af2185656b0c47afc87b76fa89283bdf170e2759
 GIT_URL[ftpm]=https://github.com/Microsoft/MSRSec.git
 GIT_REL[isp-vvcam]=lf-6.6.y_2.2.0
 GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
+GIT_REL[tac5x1x-linux-driver]=tac5x1x_driver_k5.15
+GIT_COMMIT[tac5x1x-linux-driver]=8c4ed6d5893a61f88c2d3cb8822831bb06d98b6f
+GIT_URL[tac5x1x-linux-driver]=https://github.com/SolidRun/tac5x1x-linux-driver.git
 
 # Distribution for rootfs
 # - buildroot
@@ -57,6 +60,10 @@ GIT_URL[isp-vvcam]=https://github.com/nxp-imx/isp-vvcam.git
 # - nv_counter_incr_ree_fs_to
 # Not implemented.
 : ${OPTEE_STORAGE_PRIVATE_REE:=false}
+
+# initial dtb for u-boot
+# used before board identification, and when identification fails
+: ${UBOOT_FDT:=imx8mp-cubox-m}
 
 ROOTDIR=`pwd`
 
@@ -96,7 +103,7 @@ fi
 ###############################################################################
 
 cd $ROOTDIR
-COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam"
+COMPONENTS="imx-atf uboot-imx linux-imx imx-mkimage imx-optee-os ftpm mfgtools isp-vvcam tac5x1x-linux-driver"
 mkdir -p build
 mkdir -p images/tmp/
 for i in $COMPONENTS; do
@@ -185,12 +192,8 @@ do_build_opteeos() {
 	cd $ROOTDIR/build/imx-optee-os/
 
 	# REE_FS OPTIONS:
-	# - CFG_RPMB_FS:
-	#   Enable or disable RPMB Filesystem Feature.
-	# - CFG_RPMB_WRITE_KEY:
-	#   Disabled by default to avoid accidental programming of key,
-	#   enable if optee-os shall use rpmb for secure storage.
-	#   Only required during first use.
+	# - CFG_REE_FS:
+	#   Enable or disable REE Filesystem Feature.
 	if [ "x$OPTEE_STORAGE_PRIVATE_REE" = "xtrue" ]; then
 		REE_FS="CFG_REE_FS=y"
 	else
@@ -260,12 +263,13 @@ do_build_uboot() {
 	cd $ROOTDIR/build/uboot-imx
 	./scripts/kconfig/merge_config.sh configs/imx8mp_solidrun_defconfig $ROOTDIR/configs/uboot.extra
 
+	printf "CONFIG_DEFAULT_DEVICE_TREE=\"%s\"\n" "${UBOOT_FDT}" >> .config || true
+
 	if [ "x${BOOTSOURCE}" = "xmmc-data" ];  then
 		# u-boot selects mmc device (1/2) automatically during boot, only set partition/offset
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
 CONFIG_SYS_MMC_ENV_PART=0
-CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x300
 EOF
 	fi
 	if [ "x${BOOTSOURCE}" = "xmmc-boot0" ];  then
@@ -273,7 +277,6 @@ EOF
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
 CONFIG_SYS_MMC_ENV_PART=1
-CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
 EOF
 	fi
 	if [ "x${BOOTSOURCE}" = "xmmc-boot1" ];  then
@@ -281,7 +284,6 @@ EOF
 cat >> .config << EOF
 CONFIG_ENV_IS_IN_MMC=y
 CONFIG_SYS_MMC_ENV_PART=2
-CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x2c0
 EOF
 	fi
 
@@ -301,7 +303,7 @@ do_build_imximage() {
 	unset ARCH CROSS_COMPILE
 	cd $ROOTDIR/build/imx-mkimage
 	make clean
-	make SOC=iMX8MP dtbs=imx8mp-cubox-m.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-iiot.dtb imx8mp-hummingboard-mate.dtb imx8mp-hummingboard-pro.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
+	make SOC=iMX8MP dtbs=${UBOOT_FDT}.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-iiot.dtb imx8mp-hummingboard-mate.dtb imx8mp-hummingboard-pro.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
 	mkdir -p $ROOTDIR/images
 	cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
 }
@@ -333,7 +335,7 @@ function build_kernel() {
 		freescale/imx8mp-hummingboard-pulse.dtb
 		freescale/imx8mp-hummingboard-ripple.dtb
 	)
-	make -j$(nproc) CHECK_DTBS=1 ${CHECK_DTBS[@]}
+	make -j$(nproc) -k CHECK_DTBS=1 ${CHECK_DTBS[@]} || true
 	make -j$(nproc) Image Image.gz dtbs modules
 	make savedefconfig
 	KRELEASE=`make kernelrelease`
@@ -344,7 +346,7 @@ function build_kernel() {
 	cp $ROOTDIR/build/linux-imx/System.map $ROOTDIR/images/tmp/linux/boot
 	cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image $ROOTDIR/images/tmp/linux/boot
 	cp $ROOTDIR/build/linux-imx/arch/arm64/boot/Image.gz $ROOTDIR/images/tmp/linux/boot
-	for prefix in cubox-m hummingboard sr-som; do
+	for prefix in cubox-m hummingboard solidsense sr-som; do
 		find $ROOTDIR/build/linux-imx/arch/arm64/boot/dts/freescale/ -iname "imx8mp-${prefix}*.dtb*" -exec cp {} $ROOTDIR/images/tmp/linux/boot/freescale/ \;
 	done
 }
@@ -385,12 +387,22 @@ function build_isp_vvcam() {
 	make -j$(nproc) KERNEL_SRC="${ROOTDIR}/images/tmp/linux-headers" INSTALL_MOD_PATH="$ROOTDIR/images/tmp/linux/usr" INSTALL_MOD_DIR=extra INSTALL_MOD_STRIP=1 modules_install
 }
 
+# build out of tree audio codec driver
+function build_tac5x1x() {
+	cd "${ROOTDIR}/build/tac5x1x-linux-driver"
+	make -C "${ROOTDIR}/images/tmp/linux-headers" M="$PWD" clean
+	make -j$(nproc) -C "${ROOTDIR}/images/tmp/linux-headers" M="$PWD"
+	make -j$(nproc) -C "${ROOTDIR}/images/tmp/linux-headers" M="$PWD" INSTALL_MOD_PATH="$ROOTDIR/images/tmp/linux/usr" INSTALL_MOD_DIR=extra INSTALL_MOD_STRIP=1 modules_install
+}
+
 # compile kernel
 build_kernel
 
 # build external modules
 build_kernel_headers
+
 #build_isp_vvcam
+build_tac5x1x
 
 # regenerate modules dependencies
 depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
@@ -503,6 +515,8 @@ EOF
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
 	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
+	# apply symbolic links as hard links (because e2ln does not support symbolic)
+	find "${ROOTDIR}/overlay/${DISTRO}" -type l -printf "${ROOTDIR}/images/tmp/rootfs.ext4:%h/%l\0%p\0" | sed -e " s;${ROOTDIR}/overlay/${DISTRO};;g" | xargs -0n 2 e2ln
 }
 
 # BUILD selected Distro buildroot/debian

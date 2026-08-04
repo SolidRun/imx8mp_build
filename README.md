@@ -35,6 +35,9 @@ The build script supports several customisation options that can be applied thro
   - `true` (default)
 - `OPTEE_STORAGE_PRIVATE_REE`: enable optee-os secure storage with insecure real-world fs
   - `false` (default)
+- `UBOOT_FDT`: select initial dtb for bootloader before board identification
+  - `uboot-imx/arch/arm/dts/*.dts` any dts in this location can be selected by basename
+  - `imx8mp-cubox-m` (default)
 
 #### Example
    generating buildroot image
@@ -186,4 +189,42 @@ Finally connect microSD card to the device and set boot-switches accordingly.
 
 - **username:** root
 - **password:** root
+
+## Device Tree Overlays
+
+Some add-on cards / options are shipped as device tree overlays (`.dtbo`) that
+are applied on top of the base board DTB at boot. The `.dtbo` files are built
+and copied to `freescale/` on the boot partition automatically, and the base
+DTBs are compiled with symbols (`-@`) so overlays resolve at runtime.
+
+To apply one, add an `FDTOVERLAYS` line to `extlinux/extlinux.conf` on the boot
+partition (path is relative to the `extlinux/` dir, same as `FDTDIR`):
+
+```
+LABEL default
+	MENU LABEL default
+	LINUX ../Image.gz
+	FDTDIR ../
+	FDTOVERLAYS ../freescale/<overlay>.dtbo
+	APPEND ...
+```
+
+Multiple overlays can be applied by listing several space-separated `.dtbo`
+paths on the `FDTOVERLAYS` line. Without an `FDTOVERLAYS` line the board boots
+on its base DTB only (no add-on devices).
+
+Available overlays:
+
+| Base board          | Overlay (`freescale/…dtbo`)                          | Enables                          |
+| ------------------- | ---------------------------------------------------- | -------------------------------- |
+| SolidSense AIOT     | `imx8mp-solidsense-aiot-addon-flash-card.dtbo`       | Flash Card J6 (OPT4001, HDC3022, LM3645) |
+| HummingBoard IIoT   | `imx8mp-hummingboard-iiot-rs485-a.dtbo`              | RS485 port A                     |
+| HummingBoard IIoT   | `imx8mp-hummingboard-iiot-rs485-b.dtbo`              | RS485 port B                     |
+| HummingBoard IIoT   | `imx8mp-hummingboard-iiot-panel-dsi-WJ70N3TYJHMNG0.dtbo` | DSI panel (WJ70N3TYJHMNG0)   |
+| HummingBoard IIoT   | `imx8mp-hummingboard-iiot-panel-lvds-WF70A8SYJHLNGA.dtbo` | LVDS panel (WF70A8SYJHLNGA)  |
+| HummingBoard Pulse  | `imx8mp-hummingboard-pulse-basler.dtbo`             | Basler camera                    |
+| SR-SoM (carrier)    | `imx8mp-sr-som-basler.dtbo`                          | Basler camera                    |
+
+> Note: `FDTOVERLAYS` requires U-Boot built with `CONFIG_OF_LIBFDT_OVERLAY`.
+> Always pair an overlay with its matching base board DTB.
 
