@@ -193,12 +193,8 @@ do_build_opteeos() {
 	cd $ROOTDIR/build/imx-optee-os/
 
 	# REE_FS OPTIONS:
-	# - CFG_RPMB_FS:
-	#   Enable or disable RPMB Filesystem Feature.
-	# - CFG_RPMB_WRITE_KEY:
-	#   Disabled by default to avoid accidental programming of key,
-	#   enable if optee-os shall use rpmb for secure storage.
-	#   Only required during first use.
+	# - CFG_REE_FS:
+	#   Enable or disable REE Filesystem Feature.
 	if [ "x$OPTEE_STORAGE_PRIVATE_REE" = "xtrue" ]; then
 		REE_FS="CFG_REE_FS=y"
 	else

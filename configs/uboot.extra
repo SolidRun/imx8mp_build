@@ -1,1 +1,2 @@
 CONFIG_OF_LIST="imx8mp-cubox-m imx8mp-hummingboard-iiot imx8mp-hummingboard-mate imx8mp-hummingboard-pro imx8mp-hummingboard-pulse imx8mp-hummingboard-ripple imx8mp-solidsense-aiot"
+# CONFIG_EFI_MM_COMM_TEE is not set
