@@ -40,7 +40,7 @@ GIT_URL[tac5x1x-linux-driver]=https://github.com/SolidRun/tac5x1x-linux-driver.g
 ## Debian Options
 : ${DEBIAN_VERSION:=bullseye}
 : ${DEBIAN_ROOTFS_SIZE:=936M}
-: ${DEBIAN_PACKAGES:="apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd,systemd-sysv,dbus,tio,usbutils,wget,xterm,xz-utils"}
+: ${DEBIAN_PACKAGES:="apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,grub-efi,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd,systemd-sysv,dbus,tio,usbutils,wget,xterm,xz-utils"}
 : ${HOST_NAME:=imx8mp}
 
 # Boot Source
@@ -522,23 +522,63 @@ EOF
 # BUILD selected Distro buildroot/debian
 do_build_${DISTRO}
 
-do_generate_extlinux() {
-	local EXTLINUX=$1
+do_generate_grub_efi() {
+	local DESTDIR=$1
 	local DISKIMAGE=$2
-	local PARTNUMBER=$3
+	local EFIPARTNUMBER=$3
+	local ROOTPARTNUMBER=$4
 	local PARTUUID=`blkid -s PTUUID -o value ${DISKIMAGE}`
-	PARTUUID=${PARTUUID}'-0'${PARTNUMBER} # specific partition uuid
+	PARTUUID_EFI=${PARTUUID}'-0'${EFIPARTNUMBER} # specific partition uuid
+	PARTUUID_ROOT=${PARTUUID}'-0'${ROOTPARTNUMBER} # specific partition uuid
+	GRUB_MODULES_BUILTIN="fat part_msdos search search_fs_uuid"
 
-	mkdir -p $(dirname ${EXTLINUX})
-	cat > ${EXTLINUX} << EOF
-TIMEOUT 1
-DEFAULT default
-MENU TITLE SolidRun i.MX8MP Reference BSP
-LABEL default
-	MENU LABEL default
-	LINUX ../Image.gz
-	FDTDIR ../dtb
-	APPEND console=\${console} earlycon=ec_imx6q,0x30890000,115200 root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
+	# recreate grub folder
+	rm -rf "${DESTDIR}/grub"
+	mkdir -p "${DESTDIR}/grub/arm64-efi" "${DESTDIR}/EFI/BOOT"
+
+	# set grub-mkconfig and copy modules
+	case ${DISTRO} in
+	buildroot)
+		# use buildroot provided grub-mkconfig
+		GRUB_MKIMAGE="${ROOTDIR}/build/buildroot/output/host/bin/grub-mkimage"
+
+		# copy grub modules to boot partition
+		find "${ROOTDIR}/build/buildroot/output/target/usr/lib/grub/arm64-efi" \( -name "*.mod" -o -name "*.lst" -o -name "*.img" \) -exec cp -v {} "${DESTDIR}/grub/arm64-efi/" \;
+	;;
+	debian)
+		# use host os / container grub-mkconfig
+		GRUB_MKIMAGE=$(env PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin which grub-mkimage)
+
+		# copy grub modules to boot partition
+		e2ls "${ROOTFS_IMG}:usr/lib/grub/arm64-efi" | xargs -n 1 echo | grep -E "\.(mod|lst|img)$" | xargs -I {} e2cp "${ROOTFS_IMG}:usr/lib/grub/arm64-efi/{}" "${DESTDIR}/grub/arm64-efi/{}"
+	;;
+	*)
+		echo "Generating grub.efi not implemented for ${DISTRO}!"
+		return 1
+	;;
+	esac
+
+	# generate builtin grub config
+	cat > builtin.cfg << EOF
+search.fs_uuid ${PARTUUID_EFI} root
+set prefix=(\$root)/grub
+EOF
+
+	"$GRUB_MKIMAGE" \
+		-d "${DESTDIR}/grub/arm64-efi" \
+		-O arm64-efi \
+		-o "${DESTDIR}/EFI/BOOT/BOOTAA64.EFI" \
+		-p /grub \
+		-c builtin.cfg \
+		${GRUB_MODULES_BUILTIN}
+
+	# generate full grub.cfg
+	cat > "${DESTDIR}/grub/grub.cfg" << EOF
+set timeout=1
+set default="0"
+menuentry "SolidRun i.MX8MP Reference BSP" {
+	linux /Image.gz earlycon root=PARTUUID=${PARTUUID_ROOT} rw rootwait
+}
 EOF
 }
 
@@ -572,16 +612,16 @@ IMAGE_SIZE=$((IMAGE_ROOTPART_END+1))
 rm -f tmp/part1.fat32; truncate -s ${IMAGE_BOOTPART_SIZE} tmp/part1.fat32
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 rm -f ${IMG}; truncate -s ${IMAGE_SIZE} ${IMG}
-env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary ${IMAGE_BOOTPART_START}B ${IMAGE_BOOTPART_END}B mkpart primary ${IMAGE_ROOTPART_START}B ${IMAGE_ROOTPART_END}B
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary fat32 ${IMAGE_BOOTPART_START}B ${IMAGE_BOOTPART_END}B set 1 esp on mkpart primary ${IMAGE_ROOTPART_START}B ${IMAGE_ROOTPART_END}B
 
 echo "copying kernel modules ..."
 find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a
 find "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/linux/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a -v
 
-do_generate_extlinux ${ROOTDIR}/images/extlinux.conf ${IMG} 2
+do_generate_grub_efi ${ROOTDIR}/images/grub ${IMG} 1 2
 
-mmd -i tmp/part1.fat32 ::/extlinux
-mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
+mcopy -s -i tmp/part1.fat32 "${ROOTDIR}/images/grub/EFI" ::
+mcopy -s -i tmp/part1.fat32 "${ROOTDIR}/images/grub/grub" ::
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/Image.gz ::/Image.gz
 mmd -i tmp/part1.fat32 ::/dtb ::/dtb/freescale
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb* ::/dtb/freescale
