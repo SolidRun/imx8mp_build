@@ -537,7 +537,7 @@ MENU TITLE SolidRun i.MX8MP Reference BSP
 LABEL default
 	MENU LABEL default
 	LINUX ../Image.gz
-	FDTDIR ../
+	FDTDIR ../dtb
 	APPEND console=\${console} earlycon=ec_imx6q,0x30890000,115200 root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
 EOF
 }
@@ -583,8 +583,8 @@ do_generate_extlinux ${ROOTDIR}/images/extlinux.conf ${IMG} 2
 mmd -i tmp/part1.fat32 ::/extlinux
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/extlinux.conf ::/extlinux/extlinux.conf
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/Image.gz ::/Image.gz
-mmd -i tmp/part1.fat32 ::/freescale
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb* ::/freescale
+mmd -i tmp/part1.fat32 ::/dtb ::/dtb/freescale
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb* ::/dtb/freescale
 
 # copy boot and rootfs partitions to image
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=4 conv=notrunc
