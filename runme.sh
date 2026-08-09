@@ -7,7 +7,7 @@ declare -A GIT_REL GIT_COMMIT GIT_URL
 GIT_REL[imx-atf]=lf-6.6.36-2.1.0
 GIT_URL[imx-atf]=https://github.com/nxp-imx/imx-atf.git
 GIT_REL[uboot-imx]=lf-6.6.52-2.2.0-sr-imx8
-GIT_COMMIT[uboot-imx]=4e0b62cacf79584eae3e6bc3161128802ba4ed4d
+GIT_COMMIT[uboot-imx]=40374c3191f459343404be5b67771b753486ac50
 GIT_URL[uboot-imx]=https://github.com/SolidRun/u-boot.git
 GIT_REL[linux-imx]=lf-6.6-sr-imx8
 GIT_COMMIT[linux-imx]=04d5b42d65c806ce96a2ee8f4a3c586906c75a9c
@@ -299,17 +299,6 @@ EOF
 echo "*** Building u-boot"
 do_build_uboot
 
-# Assemble boot image
-do_build_imximage() {
-	unset ARCH CROSS_COMPILE
-	cd $ROOTDIR/build/imx-mkimage
-	make clean
-	make SOC=iMX8MP dtbs=${UBOOT_FDT}.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-iiot.dtb imx8mp-hummingboard-mate.dtb imx8mp-hummingboard-pro.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin flash_evk
-	mkdir -p $ROOTDIR/images
-	cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
-}
-do_build_imximage
-
 ###############################################################################
 # Building Linux
 ###############################################################################
@@ -414,6 +403,78 @@ depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot
 # generate packages
 pkg_kernel_headers
 pkg_kernel
+
+###############################################################################
+# Assemble Bootloader Image
+###############################################################################
+
+# generate OS DTBs FIT Image
+function build_osdtbs_fit() {
+	local DTBS_DIR="${ROOTDIR}/images/tmp/linux/boot/freescale"
+	local ITS="${ROOTDIR}/images/tmp/os-dtbs.its"
+	local FIT="${ROOTDIR}/images/tmp/os-dtbs.fit"
+	local fdtpath
+
+	rm -f "$ITS" "$FIT"
+
+	# generate its file header
+	cat << 'EOF' >> "$ITS"
+/dts-v1/;
+
+/ {
+	description = "OS DTBs Bundle";
+	#address-cells = <1>;
+
+	images {
+EOF
+
+	# generate section for each dtb
+	find $DTBS_DIR -type f -iname "*.dtb" -print0 | while IFS= read -r -d '' fdtpath; do
+			local base vendor fdtfile nodename
+
+			# skip pre-applied overlays (if same name with .dtbo exists)
+			if [ -e "${fdtpath}o" ]; then
+				continue
+			fi
+
+			# generate strings
+			base=$(basename "$fdtpath")
+			vendor=$(basename "$(dirname "$fdtpath")")
+			fdtfile="${vendor}/${base}"
+			nodename="${base%.dtb}-dtb"
+
+			# emit section
+			cat << EOF
+		$nodename {
+			description = "$fdtfile";
+			data = /incbin/("$fdtpath");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+		};
+EOF
+	done >> "$ITS"
+
+	# generate its file footer
+	cat << 'EOF' >> "$ITS"
+	};
+};
+EOF
+
+	mkimage -v -f "$ITS" "$FIT"
+}
+build_osdtbs_fit
+
+# Assemble boot image
+do_build_imximage() {
+	unset ARCH CROSS_COMPILE
+	cd $ROOTDIR/build/imx-mkimage
+	make clean
+	make SOC=iMX8MP dtbs=${UBOOT_FDT}.dtb supp_dtbs="imx8mp-cubox-m.dtb imx8mp-hummingboard-iiot.dtb imx8mp-hummingboard-mate.dtb imx8mp-hummingboard-pro.dtb imx8mp-hummingboard-pulse.dtb imx8mp-hummingboard-ripple.dtb" BL31=$ROOTDIR/build/imx-atf/build/imx8mp/release/bl31.bin TEE=$ROOTDIR/images/tmp/optee/tee-pager_v2.bin OS_DTBS_FIT="$ROOTDIR/images/tmp/os-dtbs.fit" flash_evk
+	mkdir -p $ROOTDIR/images
+	cp -v iMX8M/flash.bin $ROOTDIR/images/u-boot-${BOOTSOURCE}-${REPO_PREFIX}.bin
+}
+do_build_imximage
 
 ###############################################################################
 # Building FS Buildroot/Debian
