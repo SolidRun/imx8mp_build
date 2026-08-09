@@ -402,7 +402,7 @@ build_kernel
 build_kernel_headers
 
 #build_isp_vvcam
-build_tac5x1x
+#build_tac5x1x
 
 # regenerate modules dependencies
 depmod -b "${ROOTDIR}/images/tmp/linux/usr" -F "${ROOTDIR}/images/tmp/linux/boot/System.map" ${KRELEASE}
