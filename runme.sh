@@ -35,7 +35,7 @@ GIT_URL[tac5x1x-linux-driver]=https://github.com/SolidRun/tac5x1x-linux-driver.g
 ## Buildroot Options
 : ${BUILDROOT_VERSION:=2023.11}
 : ${BUILDROOT_DEFCONFIG:=buildroot_defconfig}
-: ${BUILDROOT_ROOTFS_SIZE:=448M}
+: ${BUILDROOT_ROOTFS_SIZE:=576M}
 : ${BR2_PRIMARY_SITE:=}
 ## Debian Options
 : ${DEBIAN_VERSION:=bullseye}
