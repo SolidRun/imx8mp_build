@@ -555,15 +555,16 @@ EOF
 		qemu-system-aarch64 \
 			-m 1G \
 			-M virt \
-			-cpu cortex-a57 \
+			-cpu max,pauth-impdef=on,sve=on \
 			-smp 4 \
+			-device virtio-rng-device \
 			-netdev user,id=eth0 \
 			-device virtio-net-device,netdev=eth0 \
-			-drive file=rootfs.e2.orig,if=none,format=raw,id=hd0 \
+			-drive file=rootfs.e2.orig,if=none,format=raw,id=hd0,discard=unmap \
 			-device virtio-blk-device,drive=hd0 \
 			-nographic \
 			-no-reboot \
-			-kernel "$ROOTDIR/images/tmp/linux/boot/Image" \
+			-kernel "${ROOTDIR}/images/tmp/linux/boot/Image" \
 			-append "console=ttyAMA0 root=/dev/vda rootfstype=ext2 ip=dhcp rw init=/stage2.sh" \
 
 		:
@@ -571,17 +572,23 @@ EOF
 		# convert to ext4
 		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
 
-		# fix filesystem errors
-		e2fsck -f -y rootfs.e2.orig || true
+		# fix errors
+		s=0
+		e2fsck -y rootfs.e2.orig || s=$?
+		if [ $s -ge 4 ]; then
+			echo "Error: Couldn't repair generated rootfs."
+			rm -f rootfs.e2.orig
+			exit 1
+		fi
 	fi
 
 	# export final rootfs for next steps
-	cp --sparse=always rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
+	cp --sparse=always rootfs.e2.orig "${ROOTFS_IMG}"
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
-	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
-	# apply symbolic links as hard links (because e2ln does not support symbolic)
-	find "${ROOTDIR}/overlay/${DISTRO}" -type l -printf "${ROOTDIR}/images/tmp/rootfs.ext4:%h/%l\0%p\0" | sed -e " s;${ROOTDIR}/overlay/${DISTRO};;g" | xargs -0n 2 e2ln
+	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTFS_IMG}:" -a
+
+	fsck -f -y ${ROOTFS_IMG}
 }
 
 # BUILD selected Distro buildroot/debian
@@ -652,8 +659,8 @@ mmd -i tmp/part1.fat32 ::/freescale
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/linux/boot/freescale/*.dtb* ::/freescale
 
 # copy boot and rootfs partitions to image
-dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=4 conv=notrunc
-dd if=${ROOTFS_IMG} of=${IMG} bs=1M seek=64 conv=notrunc
+dd if=tmp/part1.fat32 of=${IMG} seek=$((IMAGE_BOOTPART_START/512)) conv=notrunc,sparse
+dd if=${ROOTFS_IMG} of=${IMG} seek=$((IMAGE_ROOTPART_START/512)) conv=notrunc,sparse
 
 # generate combined image with os + bootloader
 if [ "x${BOOTSOURCE}" = "xmmc-data" ]; then
