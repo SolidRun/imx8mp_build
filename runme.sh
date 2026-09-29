@@ -589,6 +589,11 @@ EOF
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
 	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTFS_IMG}:" -a
+	find "${ROOTDIR}/overlay/${DISTRO}" -type l -printf "%P\0" | while IFS= read -r -d '' link; do
+		target=$(readlink "${ROOTDIR}/overlay/${DISTRO}/${link}")
+		target_abs=$(realpath -m -s "$(dirname "/${link}")/${target}")
+		e2ln "${ROOTFS_IMG}:${target_abs}" "${ROOTFS_IMG}:/${link}"
+	done
 
 	fsck -f -y ${ROOTFS_IMG}
 }
